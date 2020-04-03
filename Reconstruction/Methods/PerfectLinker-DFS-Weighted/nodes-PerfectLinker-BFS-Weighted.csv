@@ -1,0 +1,5 @@
+#tail	head	KSP index
+SRC	E	1
+E	B	2
+B	A	3
+A	SNK	4

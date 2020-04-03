@@ -1,0 +1,12 @@
+preprocessing inputs...
+length of edge set: 159863
+number of edges in GR: 159863
+length of edge set: 428
+number of edges in GR: 428
+sources: ['Q9UP38', 'Q9ULW2', 'Q14332', 'Q9NPG1', 'Q13467', 'O75084', 'Q9H461', 'O00144', 'Q07954', 'O75197', 'O75581', 'Q01973', 'Q01974', 'P34925']
+sinks: ['P25054', 'Q9P2D1', 'Q13363', 'P35222', 'P98082', 'Q9UJU2', 'Q13469', 'Q02962', 'P37231', 'Q15797', 'O00570', 'P15923', 'P15884', 'Q9NQB0']
+sources: ['Q9UP38', 'Q9ULW2', 'Q14332', 'Q9NPG1', 'Q13467', 'O75084', 'Q9H461', 'O00144', 'Q07954', 'O75197', 'O75581', 'Q01973', 'Q01974', 'P34925']
+sinks: ['P25054', 'Q9P2D1', 'Q13363', 'P35222', 'P98082', 'Q9UJU2', 'Q13469', 'Q02962', 'P37231', 'Q15797', 'O00570', 'P15923', 'P15884', 'Q9NQB0']
+making prediction...
+got 353 out of 456
+saving prediction...

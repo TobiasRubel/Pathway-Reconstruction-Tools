@@ -1,0 +1,15 @@
+#node	node_symbol	node_type
+P62993	none	GRB2
+P31785	receptor	IL2RG
+P15248	none	IL9
+Q01113	receptor	IL9R
+P35568	none	IRS1
+Q9Y4H2	none	IRS2
+P23458	none	JAK1
+P52333	none	JAK3
+Q92993	none	KAT5
+P27986	none	PIK3R1
+P42224	tf	STAT1
+P40763	tf	STAT3
+P51692	tf	STAT5B
+P55072	none	VCP

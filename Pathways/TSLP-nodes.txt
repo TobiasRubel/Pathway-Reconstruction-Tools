@@ -1,0 +1,8 @@
+#node	node_symbol	node_type
+Q9HC73	none	CRLF2
+P16871	receptor	IL7R
+P23458	none	JAK1
+O60674	none	JAK2
+P42229	tf	STAT5A
+P51692	tf	STAT5B
+Q969D9	none	TSLP
