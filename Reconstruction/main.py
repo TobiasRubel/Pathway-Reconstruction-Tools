@@ -26,18 +26,18 @@ from multiprocessing import Process
 #should be placed here
 #DEST_PATH = '/home/tobias/Documents/Work/CompBio/PR/2018_interactome-data'
 
-DEST_PATH = '/home/tobias/Documents/Work/CompBio/correlating-PL-HL/data'
+DEST_PATH = '../Validation/PR/data'
 #for each pathway, plots are to be deposited here.
-PLOT_PATH = '/home/tobias/Documents/Work/CompBio/PR/2018_interactome-plots'
+PLOT_PATH = '../Validation/PR/plots'
 
 #all input data is placed here...
-DATA_PATH = '/home/tobias/Documents/Work/CompBio/ritz-data/pathways'
+DATA_PATH = '../Pathways'
 
 #except the interactome...
-INTERACTOME = '/home/tobias/Documents/Work/CompBio/localized-pathlinker/Data/PathLinker_2018_human-ppi-weighted-cap0_75.txt'
+INTERACTOME = '../Interactomes/PathLinker_2018_human-ppi-weighted-cap0_75.txt'
 #INTERACTOME = '/home/tobias/Documents/Work/CompBio/PathLinker/data/2015pathlinker-weighted.txt'
 
-EXAMPLE_CONFIG = '/home/tobias/Documents/Work/CompBio/PR/config.conf'
+EXAMPLE_CONFIG = '../Validation/PR/config.conf'
 #after running an algorithm, we need to create a folder for computing PR
 
 def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,pathway:str, k: int) -> None:
@@ -87,7 +87,7 @@ def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/PathLinker/run.py'
+    RUN = 'Methods/PathLinker/run.py'
     CALL = 'python2.7 {} -k {} -o PathLinker {} {}'.format(RUN,k,interactome,labeled_nodes)
     #execute script
     subprocess.call(CALL.split())
@@ -106,9 +106,9 @@ def run_LocPL(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute 
-    RUN = '/home/tobias/Documents/Work/CompBio/localized-pathlinker/Loc_PL_run.py'
-    PROTEIN_LOC = '/home/tobias/Documents/Work/CompBio/localized-pathlinker/Data/Protein_Localization_Scores.txt'
-    COMPPI = '/home/tobias/Documents/Work/CompBio/localized-pathlinker/Data/comppi--interactions--tax_hsapiens_loc_all.txt'
+    RUN = 'Methods/localized-pathlinker/Loc_PL_run.py'
+    PROTEIN_LOC = 'Methods/localized-pathlinker/Data/Protein_Localization_Scores.txt'
+    COMPPI = 'Methods/localized-pathlinker/Data/comppi--interactions--tax_hsapiens_loc_all.txt'
     CALL = 'python2.7 {} -k {} -o LocalizedPathLinker {} {} {} {}'.format(RUN,k,interactome,labeled_nodes,COMPPI,PROTEIN_LOC)
     #execute script
     subprocess.call(CALL.split())
@@ -125,7 +125,7 @@ def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/PerfectLinker/PL.py'
+    RUN = 'Methods/PerfectLinker/PL.py'
     CALL = 'python3 {} edges {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
     print('*'*20)
     print(CALL)
@@ -145,7 +145,7 @@ def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/PerfectLinker/PL.py'
+    RUN = 'Methods/PerfectLinker/PL.py'
     CALL = 'python3 {} nodes {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
     #execute script
     subprocess.call(CALL.split())
@@ -162,7 +162,7 @@ def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> No
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/HybridLinker/main.py'
+    RUN = 'Methods/HybridLinker/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
     #execute script
     subprocess.call(CALL.split())
@@ -195,7 +195,7 @@ def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/HybridLinker-BFS-Weighted/main.py'
+    RUN = 'Methods/HybridLinker-BFS-Weighted/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
     #execute script
     subprocess.call(CALL.split())
@@ -211,7 +211,7 @@ def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/HybridLinker-DFS-Weighted/main.py'
+    RUN = 'Methods/HybridLinker-DFS-Weighted/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
     #execute script
     subprocess.call(CALL.split())
@@ -227,7 +227,7 @@ def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k:
     :side-effect   makes a dest directory with predicted pathway 
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/HybridLinker/main.py'
+    RUN = 'Methods/HybridLinker/main.py'
     for i in [50,75,100,150,200,300,400]:
         CALL = 'python3 {} {} {} {} {}'.format(RUN,i,interactome,labeled_nodes,pathway)
         #execute script
@@ -287,8 +287,8 @@ def main(argv):
     #return
     k = int(argv[1])
     #all the methods to use 
-    #METHODS = [run_PathLinker, run_HybridLinker, run_PerfectLinker_nodes, run_PerfectLinker_edges,run_HybridLinker_BFS]
-    METHODS = [run_PathLinker, run_HybridLinker]
+    METHODS = [run_PathLinker, run_HybridLinker, run_PerfectLinker_nodes, run_PerfectLinker_edges,run_HybridLinker_BFS]
+    #METHODS = [run_PathLinker, run_HybridLinker]
     #METHODS = [run_HybridLinker_BFS_Weighted,run_HybridLinker_DFS_Weighted]
     ARGS = fetch_arguments(k)
     #run predictions for all pathways. 
