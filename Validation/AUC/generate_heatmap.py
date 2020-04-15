@@ -85,6 +85,7 @@ PATHWAYS.remove('RAGE')
 PATHWAYS.remove('ID')
 print(PATHWAYS)
 
+#Specify this.
 DATA_PATH = '/home/tobias/Documents/Work/CompBio/PR/debug-data'
 
 def main():
