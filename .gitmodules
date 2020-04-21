@@ -1,0 +1,11 @@
+[submodule "Reconstruction/Methods/PathLinker"]
+  path = Reconstruction/Methods/PathLinker
+  url = https://github.com/Murali-group/PathLinker
+
+[submodule "Reconstruction/Methods/localized-pathlinker"]
+  path = Reconstruction/Methods/localized-pathlinker
+  url = https://github.com/annaritz/localized-pathlinker
+
+[submodule "Validation/PR"]
+  path = Validation/PR
+  url = https://github.com/TobiasRubel/Precison-Recall
