@@ -28,14 +28,13 @@ from multiprocessing import Process
 
 DEST_PATH = '../Validation/PR/data'
 #for each pathway, plots are to be deposited here.
-PLOT_PATH = '../Validation/PR/plots'
-
+#PLOT_PATH = '../Validation/PR/plots'
+PLOT_PATH = 'plots'
 #all input data is placed here...
 DATA_PATH = '../Pathways'
 
 #except the interactome...
 INTERACTOME = '../Interactomes/PathLinker_2018_human-ppi-weighted-cap0_75.txt'
-#INTERACTOME = '/home/tobias/Documents/Work/CompBio/PathLinker/data/2015pathlinker-weighted.txt'
 
 EXAMPLE_CONFIG = '../Validation/PR/config.conf'
 #after running an algorithm, we need to create a folder for computing PR
@@ -63,8 +62,8 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
     #populate directory
     pred = next(x for x in os.listdir('.') if prediction in x)
     os.replace(pred,os.path.join(DEST,'ranked-edges.csv'))
-    shutil.copy(pathway,os.path.join(DEST,'ground.csv'))
-    shutil.copy(interactome,os.path.join(DEST,'interactome.csv'))
+    os.symlink(os.path.join('../../../',pathway),os.path.join(DEST,'ground.csv'))
+    os.symlink(os.path.join('../../../',interactome),os.path.join(DEST,'interactome.csv'))
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
 
@@ -92,7 +91,7 @@ def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,verbose)
     #execute script
     subprocess.call(CALL.split())
-    report('ShortestPaths','ShortestPaths',interactome,labeled_nodes,pathway,k)
+    report('ShortestPaths','shortest_paths',interactome,labeled_nodes,pathway,k)
 
 def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -193,7 +192,7 @@ def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -
     :side-effect   makes a dest directory with predicted pathway
     """
     #set up what we need to execute
-    RUN = '/home/tobias/Documents/Work/CompBio/HybridLinker-BFS/main.py'
+    RUN = 'Methods/HybridLinker-BFS/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
     #execute script
     subprocess.call(CALL.split())
@@ -273,7 +272,7 @@ def pr_all():
     pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
     pathway_names.remove('')
     print(pathway_names)
-    RUN = '/home/tobias/Documents/Work/CompBio/PR/make_pr.py'
+    RUN = '../Validation/PR/make_pr.py'
     for p in pathway_names:
         print('p: {}'.format(p))
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
@@ -290,10 +289,11 @@ def plot_all():
     global PLOT_PATH
     global DEST_PATH
     pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
-    RUN = '/home/tobias/Documents/Work/CompBio/PR/plot_pr.py'
+    RUN = '../Validation/PR/plot_pr.py'
     for p in pathway_names:
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
+        print(CALL)
         subprocess.call(CALL.split())
 
 def main(argv):
@@ -306,13 +306,16 @@ def main(argv):
         k = 500
     print('using k=%d' % (k))
     #all the methods to use
-    #METHODS = [run_ShortestPaths, run_PathLinker, run_HybridLinker]
+    #METHODS = [run_HybridLinker,run_PathLinker, ]
     METHODS = [run_ShortestPaths]
-    ARGS = fetch_arguments(k,single_pathway=True)
+    try:
+        ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
+        print('single_pathway = {}'.format(eval(argv[2])))
+    except:
+        ARGS = fetch_arguments(k,single_pathway=True)
     #run predictions for all pathways.
     #n.b. we will try to start |METHODS| processes.
     for arg in ARGS:
-    #for arg in [('/home/tobias/Documents/Work/CompBio/PathLinker/data/2015pathlinker-weighted.txt', '/home/tobias/Documents/Work/CompBio/ritz-data/pathways/Wnt-nodes.txt', '/home/tobias/Documents/Work/CompBio/ritz-data/pathways/Wnt-edges.txt', 10000)]:
         print('running all methods on {}'.format(arg))
         lat = []
         for method in METHODS:
@@ -321,8 +324,8 @@ def main(argv):
             lat.append(proc)
         for l in lat:
             l.join()
-    #pr_all()
-    #plot_all()
+    pr_all()
+    plot_all()
 
 def main_2(argv):
     pr_all()
