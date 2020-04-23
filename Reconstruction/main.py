@@ -307,7 +307,7 @@ def main(argv):
     print('using k=%d' % (k))
     #all the methods to use
     #METHODS = [run_HybridLinker,run_PathLinker, ]
-    METHODS = [run_ShortestPaths]
+    METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker]
     try:
         ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
         print('single_pathway = {}'.format(eval(argv[2])))
