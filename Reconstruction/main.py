@@ -297,9 +297,9 @@ def plot_all():
         subprocess.call(CALL.split())
 
 def main(argv):
-    #pr_all()
-    #plot_all()
-    #return
+    pr_all()
+    plot_all()
+    return
     if len(argv) > 1:
         k = int(argv[1])
     else:
