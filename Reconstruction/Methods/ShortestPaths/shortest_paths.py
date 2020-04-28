@@ -14,6 +14,8 @@ def run(G, sources, targets, verbose=False):
 		shortest_path = nx.shortest_path(G,s,weight='cost')
 		shortest_path_len = nx.shortest_path_length(G,s,weight='cost')
 		for t in targets:
+			if t not in shortest_path: # s and t are not connected.
+				continue
 			path = shortest_path[t]
 			for i in range(len(path)-1):
 				u = path[i]
