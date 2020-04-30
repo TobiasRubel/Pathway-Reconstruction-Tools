@@ -62,8 +62,15 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
     #populate directory
     pred = next(x for x in os.listdir('.') if prediction in x)
     os.replace(pred,os.path.join(DEST,'ranked-edges.csv'))
-    os.symlink(os.path.join('../../../',pathway),os.path.join(DEST,'ground.csv'))
-    os.symlink(os.path.join('../../../',interactome),os.path.join(DEST,'interactome.csv'))
+    #exceptions occur when the symlink already exists
+    try:
+        os.symlink(os.path.join('../../../',pathway),os.path.join(DEST,'ground.csv'))
+    except Exception as e:
+        pass
+    try:
+        os.symlink(os.path.join('../../../',interactome),os.path.join(DEST,'interactome.csv'))
+    except Exception as e:
+        pass
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
 
@@ -181,6 +188,23 @@ def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> No
     subprocess.call(CALL.split())
     report('HybridLinker','HybridLinker',interactome,labeled_nodes,pathway,k)
 
+def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute (meaningless here)
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/ShortestPaths/HL.py'
+    CALL = 'python3 {} {} {}'.format(RUN,interactome,labeled_nodes,)
+    #execute script
+    subprocess.call(CALL.split())
+    report('HybridLinker-SP','HybridLinker-SP',interactome,labeled_nodes,pathway,k)
+
+
 
 def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -293,11 +317,11 @@ def plot_all():
     for p in pathway_names:
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
-        print(CALL)
+        print('executing {}:'.format(CALL))
         subprocess.call(CALL.split())
 
 def main(argv):
-    pr_all()
+    #pr_all()
     plot_all()
     return
     if len(argv) > 1:
@@ -306,11 +330,13 @@ def main(argv):
         k = 500
     print('using k=%d' % (k))
     #all the methods to use
-    #METHODS = [run_HybridLinker,run_PathLinker, ]
-    METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker]
+    METHODS = [run_HybridLinker_SP ]
+    #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
     try:
         ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
         print('single_pathway = {}'.format(eval(argv[2])))
+        print(ARGS)
+        return
     except:
         ARGS = fetch_arguments(k,single_pathway=True)
     #run predictions for all pathways.
