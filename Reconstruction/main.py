@@ -99,7 +99,7 @@ def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,verbose)
     #execute script
     subprocess.call(CALL.split())
-    report('BowtieBuilder','BowtieBuilder',interactome,labeled_nodes,pathway,k)
+    report('BowtieBuilder','bowtie_builder',interactome,labeled_nodes,pathway,k)
 
 ## TODO: remove k as a requirement.
 def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
@@ -341,15 +341,15 @@ def plot_all():
 
 def main(argv):
     #pr_all()
-    plot_all()
-    return
+    #plot_all()
+    #return
     if len(argv) > 1:
         k = int(argv[1])
     else:
         k = 500
     print('using k=%d' % (k))
     #all the methods to use
-    METHODS = [run_HybridLinker_SP ]
+    METHODS = [run_BowtieBuilder]
     #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
     try:
         ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
@@ -369,8 +369,8 @@ def main(argv):
             lat.append(proc)
         for l in lat:
             l.join()
-    pr_all()
-    plot_all()
+    #pr_all()
+    #plot_all()
 
 def main_2(argv):
     pr_all()
