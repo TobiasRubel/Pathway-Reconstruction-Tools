@@ -83,6 +83,28 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
 #     some modification. Change the RUN assignments to the executable
 #     file on your system.
 
+
+## TODO: remove k as a requirement.
+## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
+## TODO: this makes an intermediate (.lp) file.  Where should these live?
+def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/ResponseNet/response_net.py'
+    verbose='True'
+    gamma = 20 ## FIX THIS FOR NOW -- this needs to change.
+    CALL = 'python3 {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,gamma,verbose)
+    #execute script
+    subprocess.call(CALL.split())
+    report('ResponseNet','response_net_gamma_%.2f' % (gamma),interactome,labeled_nodes,pathway,k)
+
 ## TODO: remove k as a requirement.
 def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -349,7 +371,8 @@ def main(argv):
         k = 500
     print('using k=%d' % (k))
     #all the methods to use
-    METHODS = [run_BowtieBuilder]
+    METHODS = [run_ResponseNet, run_BowtieBuilder, run_ShortestPaths]
+    #METHODS = [run_BowtieBuilder]
     #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
     try:
         ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))

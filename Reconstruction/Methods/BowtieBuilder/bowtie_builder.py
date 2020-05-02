@@ -2,6 +2,7 @@ import networkx as nx
 import sys
 import os
 import pandas as pd
+from math import log as math_log
 
 ## implements Bowtie Builder for directed, weighted graphs.
 ## Code modified from a version originally written by Allison Tegge @ VT
@@ -137,7 +138,7 @@ def df_to_graph(fname: str,verbose=True,weighted=True):
     for e in edges:
         if weighted:
             u,v,w = e
-            GR.add_edge(u,v,weight=float(w))
+            GR.add_edge(u,v,weight=float(w),cost=-math_log(max([0.000000001, w]))/math_log(10))
         else:
             u,v = e
             GR.add_edge(u,v)
