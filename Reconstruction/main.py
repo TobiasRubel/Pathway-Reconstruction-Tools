@@ -77,6 +77,25 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
 #     some modification. Change the RUN assignments to the executable
 #     file on your system.
 
+## TODO: remove k as a requirement.
+def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/BowtieBuilder/bowtie_builder.py'
+    verbose='True'
+    CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,verbose)
+    #execute script
+    subprocess.call(CALL.split())
+    report('BowtieBuilder','BowtieBuilder',interactome,labeled_nodes,pathway,k)
+
+## TODO: remove k as a requirement.
 def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
     :interactome   path/to/interactome
