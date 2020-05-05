@@ -26,6 +26,12 @@ pip3 install --user -r requirements.txt
 
 Depending on your install, you might use `pip` instead of `pip3`.
 
+Alternatively, install dependencies in a new environment using `conda` with
+
+```
+conda env create -f depends.yml
+```
+
 ## Install CBC
 
 [CBC](https://github.com/coin-or/Cbc) (Coin-or brank and cut) is an open-source linear programming solver written in C++. It is accessed from Python scripts using the `mip` python module.  CBC is only needed if you plan to run ResponseNet, which relies on a linear program solver. 
