@@ -360,38 +360,6 @@ def plot_all():
         subprocess.call(CALL.split())
 
 def main(argv):
-    #pr_all()
-    #plot_all()
-    #return
-    if len(argv) > 1:
-        k = int(argv[1])
-    else:
-        k = 500
-    print('using k=%d' % (k))
-    #all the methods to use
-    METHODS = [run_ShortestPaths]
-    #METHODS = [run_BowtieBuilder]
-    #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
-    try:
-        ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
-        print('single_pathway = {}'.format(eval(argv[2])))
-    except:
-        ARGS = fetch_arguments(k,single_pathway=True)
-    #run predictions for all pathways.
-    #n.b. we will try to start |METHODS| processes.
-    for arg in ARGS:
-        print('running all methods on {}'.format(arg))
-        lat = []
-        for method in METHODS:
-            proc = Process(target=method, args=(arg))
-            proc.start()
-            lat.append(proc)
-        for l in lat:
-            l.join()
-    #pr_all()
-    #plot_all()
-
-def main_(argv):
     #initialize some values
     with open('main.py','r') as f:
         METHODS = re.findall('run_.*(?=\()',f.read())[:-1]
@@ -426,4 +394,4 @@ def main_(argv):
         plot_all()
 
 if __name__ == "__main__":
-    main_(sys.argv)
+    main(sys.argv)
