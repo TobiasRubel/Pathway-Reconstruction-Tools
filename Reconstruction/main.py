@@ -319,9 +319,9 @@ def fetch_arguments(k,single_pathway=False):
     global DATA_PATH
     global INTERACTOME
     if single_pathway:
-        pathways=[set((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y and 'Wnt' in x]
+        pathways={frozenset((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y and 'Wnt' in x}
     else:
-        pathways = [set((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y]
+        pathways = {frozenset((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y}
     sorted_pathways = [sorted(tuple(x),key = lambda x: x.split('-')[-1]) for x in pathways]
     processed_pathways = [(os.path.join(DATA_PATH,x),os.path.join(DATA_PATH,y)) for (x,y) in sorted_pathways]
     arguments = [(INTERACTOME,y,x,k) for (x,y) in processed_pathways]
@@ -371,14 +371,12 @@ def main(argv):
         k = 500
     print('using k=%d' % (k))
     #all the methods to use
-    METHODS = [run_ResponseNet, run_BowtieBuilder, run_ShortestPaths]
+    METHODS = [run_ShortestPaths]
     #METHODS = [run_BowtieBuilder]
     #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
     try:
         ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
         print('single_pathway = {}'.format(eval(argv[2])))
-        print(ARGS)
-        return
     except:
         ARGS = fetch_arguments(k,single_pathway=True)
     #run predictions for all pathways.
