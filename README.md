@@ -26,7 +26,9 @@ pip3 install --user -r requirements.txt
 
 Depending on your install, you might use `pip` instead of `pip3`.
 
-## Install CBC
+## Method-Specific Installation Requirements
+
+### Install CBC (ResponseNet)
 
 [CBC](https://github.com/coin-or/Cbc) (Coin-or brank and cut) is an open-source linear programming solver written in C++. It is accessed from Python scripts using the `mip` python module.  CBC is only needed if you plan to run ResponseNet, which relies on a linear program solver. 
 
@@ -38,6 +40,10 @@ brew install cbc
 ```
 
 For other platforms, see [their website](https://github.com/coin-or/Cbc) with instructions to download or build from source. 
+
+## Install the [Omics Integrator 2](https://github.com/fraenkel-lab/OmicsIntegrator2) (PCSF)
+
+The most recent implementation of the Prize Collecting Steiner Forest (PCSF) is within the `Forest` module of the Omics Integrator v2.    
 
 # Instructions for checking out this repo.
 
