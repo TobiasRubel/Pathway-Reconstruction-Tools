@@ -91,7 +91,13 @@ python3 setup.py install --user
 
 Depending on your distribution, this may not work the first time.  We discovered that there is no `pcst_fast` module in Python3 (though it exists in Python2 via pypi).  To remedy this, we 
 
-1. **Installed `pcst_fast` from source**, fixing the install so Python3 libraries are called.
+1. **Installed `pcst_fast` from source.**
+2. **Added `pcst_fast` to the `PYTHONPATH` environment variable.**
+3. **Disable `pcst_fast` from the requirements in `OmicsIntegrator`.** 
+
+These details are described below.
+
+#### 1. **Installed `pcst_fast` from source**, fixing the install so Python3 libraries are called.
 
 ```
 git clone git@github.com:fraenkel-lab/pcst_fast.git
@@ -115,15 +121,15 @@ make pcst_fast_py
 
 You should now be able to `import pcst_fast` in your Python environment. 
 
-2. **Added `pcst_fast` to the `PYTHONPATH` environment variable.** In your `~/.bashrc` or `~/.bash_profile` file (for linux and macs, respectively):
+#### 2. **Added `pcst_fast` to the `PYTHONPATH` environment variable.** In your `~/.bashrc` or `~/.bash_profile` file (for linux and macs, respectively):
 
-``
+```
 export PYTHONPATH=$PYTHONPATH:/Users/aritz/Documents/github/pcst_fast/
 ```
 
 Remember to `source ~/.bashrc` or `source ~/.bash_profile` for the change to take effect.
 
-3. **Disable `pcst_fast` from the requirements in `OmicsIntegrator`** (since we satisfied the requirement with #1 and #2). In the `setup.py` file, comment out the `pcst_fast` requirement. Lines 19-29 should now look like
+#### 3. **Disable `pcst_fast` from the requirements in `OmicsIntegrator`** (since we satisfied the requirement with #1 and #2). In the `setup.py` file, comment out the `pcst_fast` requirement. Lines 19-29 should now look like
 
 ```
 install_requires=[
