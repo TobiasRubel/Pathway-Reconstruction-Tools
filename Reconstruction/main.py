@@ -16,7 +16,8 @@ import subprocess
 import os
 import sys
 import shutil
-
+import argparse
+import re
 from multiprocessing import Process
 #
 #declare global variables
@@ -315,13 +316,10 @@ def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k:
 
 #running the experiment
 
-def fetch_arguments(k,single_pathway=False):
+def fetch_arguments(k,pathways):
     global DATA_PATH
     global INTERACTOME
-    if single_pathway:
-        pathways=[set((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y and 'Wnt' in x]
-    else:
-        pathways = [set((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y]
+    pathways = {frozenset((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y and x.split('-')[0] in pathways}
     sorted_pathways = [sorted(tuple(x),key = lambda x: x.split('-')[-1]) for x in pathways]
     processed_pathways = [(os.path.join(DATA_PATH,x),os.path.join(DATA_PATH,y)) for (x,y) in sorted_pathways]
     arguments = [(INTERACTOME,y,x,k) for (x,y) in processed_pathways]
@@ -362,63 +360,38 @@ def plot_all():
         subprocess.call(CALL.split())
 
 def main(argv):
-    #pr_all()
-    #plot_all()
-    #return
-    if len(argv) > 1:
-        k = int(argv[1])
-    else:
-        k = 500
-    print('using k=%d' % (k))
-    #all the methods to use
-    METHODS = [run_ResponseNet, run_BowtieBuilder, run_ShortestPaths]
-    #METHODS = [run_BowtieBuilder]
-    #METHODS = [run_ShortestPaths,run_PerfectLinker_nodes,run_PerfectLinker_edges,run_PathLinker,run_HybridLinker]
-    try:
-        ARGS = fetch_arguments(k,single_pathway=eval(argv[2]))
-        print('single_pathway = {}'.format(eval(argv[2])))
-        print(ARGS)
-        return
-    except:
-        ARGS = fetch_arguments(k,single_pathway=True)
-    #run predictions for all pathways.
-    #n.b. we will try to start |METHODS| processes.
-    for arg in ARGS:
-        print('running all methods on {}'.format(arg))
-        lat = []
-        for method in METHODS:
-            proc = Process(target=method, args=(arg))
-            proc.start()
-            lat.append(proc)
-        for l in lat:
-            l.join()
-    #pr_all()
-    #plot_all()
-
-def main_2(argv):
-    pr_all()
-    plot_all()
-    return
-    k = int(argv[1])
-    #all the methods to use
-    METHODS = [run_HybridLinker_paramsweep]
-    ARGS = fetch_arguments(k)
-    #run predictions for all pathways.
-    #n.b. we will try to start |METHODS| processes.
-    for arg in ARGS:
-    #for arg in [('/home/tobias/Documents/Work/CompBio/PathLinker/data/2015pathlinker-weighted.txt', '/home/tobias/Documents/Work/CompBio/ritz-data/pathways/Wnt-nodes.txt', '/home/tobias/Documents/Work/CompBio/ritz-data/pathways/Wnt-edges.txt', 10000)]:
-        print('running HybridLinker on {}'.format(arg))
-        lat = []
-        for method in METHODS:
-            proc = Process(target=method, args=(arg))
-            proc.start()
-            lat.append(proc)
-        for l in lat:
-            l.join()
-    pr_all()
-    plot_all()
-
-
+    #initialize some values
+    with open('main.py','r') as f:
+        METHODS = re.findall('run_.*(?=\()',f.read())[:-1]
+    PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if not 'all' in x}
+    parser = argparse.ArgumentParser()
+    #add optional arguments
+    parser.add_argument("--pr_all",action="store_true",help="Compute Precision/Recall plots for all data in DEST_PATH")
+    parser.add_argument("--plot_all",action="store_true",help="Plot Precision/Recall plots for all data in DEST_PATH")
+    parser.add_argument("-p","--pathways",nargs="+",help="A list of pathways to make predictions for. Possible options are:\n{}".format("\n".join(PATHWAYS.union({'all'}))))
+    parser.add_argument("-m","--methods",nargs="+",help="A list of algorithms to run. Possible options are:\n{}".format("\n".join(METHODS+['all'])))
+    parser.add_argument('-k',type=int,default=10000,help="k value to pass to PathLinker. Defaults to 10,000.")
+    parser.add_argument('-y',type=int,default=20,help="gamma value to pass to ResponseNet. Defaults to 20.")
+    args = parser.parse_args()
+    if args.pathways != ['all']:
+        PATHWAYS = args.pathways
+    if args.methods != ['all']:
+        METHODS = args.methods
+    if METHODS != None and PATHWAYS != None:
+        ARGS = fetch_arguments(args.k,PATHWAYS)
+        for arg in ARGS:
+                print('running all methods on {}'.format(arg))
+                lat = []
+                for method in METHODS:
+                    proc = Process(target=eval(method), args=(arg))
+                    proc.start()
+                    lat.append(proc)
+                for l in lat:
+                    l.join()
+    if args.pr_all:
+        pr_all()
+    if args.plot_all:
+        plot_all()
 
 if __name__ == "__main__":
     main(sys.argv)

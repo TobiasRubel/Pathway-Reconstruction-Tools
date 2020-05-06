@@ -1,7 +1,38 @@
 # Pathway Reconstruction
 
 This repository contains the files needed to run and test various methods for
-signaling pathway reconstruction, with a focus on HybridLinker.
+signaling pathway reconstruction, with a focus on HybridLinker. There are thee things you need to do to get this code up and running:
+
+1. Update the repo submodules
+2. Put the interactome in the proper place
+3. Install dependencies (including method-specific dependencies if you plan to run them)
+
+# Instructions for checking out this repo.
+
+There are three submodules in this repo.  After cloning, you need to update the submodules with
+
+```
+git submodule init
+git submodule update
+```
+
+Check the `.gitmodules` file for more details.  
+
+# Adding the interactome.
+
+Within the `localized-pathlinker` directory, the interactome is in a zipped file. We need to unzip it and move it to a place where all methods expect to see it.
+
+Locate and unzip the file.
+```
+cd Reconstruction/Methods/localized-pathlinker/Data
+unzip PathLinker_2018_human-ppi-weighted-cap0_75.txt.zip
+```
+
+Make an `Interactomes/` directory and move the interactome. Unfortunately a symbolic link won't work here.
+```
+mkdir ../../../../Interactomes/
+mv PathLinker_2018_human-ppi-weighted-cap0_75.txt ../../../../Interactomes/
+```
 
 # Installation Requirements
 
@@ -26,7 +57,14 @@ pip3 install --user -r requirements.txt
 
 Depending on your install, you might use `pip` instead of `pip3`.
 
+Alternatively, install dependencies in a new environment using `conda` with
+
+```
+conda env create -f depends.yml
+```
+
 ## Method-Specific Installation Requirements
+
 
 ### Install CBC (ResponseNet)
 
@@ -41,33 +79,8 @@ brew install cbc
 
 For other platforms, see [their website](https://github.com/coin-or/Cbc) with instructions to download or build from source. 
 
-## Install the [Omics Integrator 2](https://github.com/fraenkel-lab/OmicsIntegrator2) (PCSF)
+### Install the [Omics Integrator 2](https://github.com/fraenkel-lab/OmicsIntegrator2) (PCSF)
 
 The most recent implementation of the Prize Collecting Steiner Forest (PCSF) is within the `Forest` module of the Omics Integrator v2.    
 
-# Instructions for checking out this repo.
 
-There are three submodules in this repo.  After cloning, you need to update the submodules with
-
-```
-git submodule init
-git submodule update
-```
-
-Check the `.gitmodules` file for more details.
-
-## Adding the interactome.
-
-Within the `localised-pathlinker` directory, the interactome is in a zipped file. We need to unzip it and move it to a place where all methods expect to see it.
-
-Locate and unzip the file.
-```
-cd Reconstruction/Methods/localized-pathlinker/Data
-unzip PathLinker_2018_human-ppi-weighted-cap0_75.txt.zip
-```
-
-Make an `Interactomes/` directory and move the interactome. Unfortunately a symbolic link won't work here.
-```
-mkdir ../../../../Interactomes/
-mv PathLinker_2018_human-ppi-weighted-cap0_75.txt ../../../../Interactomes/
-```
