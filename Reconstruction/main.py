@@ -15,9 +15,11 @@
 import subprocess
 import os
 import sys
+import pandas as pd
 import shutil
 import argparse
 import re
+import time
 from multiprocessing import Process
 #
 #declare global variables
@@ -62,7 +64,13 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
         print('directory already existed. Not overwriting.')
     #populate directory
     pred = next(x for x in os.listdir('.') if prediction in x)
-    os.replace(pred,os.path.join(DEST,'ranked-edges.csv'))
+    edest = os.path.join(DEST,'ranked-edges.csv')
+    os.replace(pred,edest)
+    #put pathway name in prediction file
+    df = pd.read_csv(edest,sep='\t')
+    df['pathway_name'] = [pathway.split('/')[-1].split('-')[0] for x in df.index]
+    df.to_csv(edest,sep='\t',index=False)
+
     #exceptions occur when the symlink already exists
     try:
         os.symlink(os.path.join('../../../',pathway),os.path.join(DEST,'ground.csv'))
@@ -136,7 +144,8 @@ def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> Non
     CALL = 'python3 {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,gamma,verbose)
     #execute script
     subprocess.call(CALL.split())
-    report('ResponseNet','response_net_gamma_%.2f' % (gamma),interactome,labeled_nodes,pathway,k)
+    os.remove(next(x for x in os.listdir('.') if '.lp' in x))
+    report('ResponseNet','response_net_gamma_{}'.format(gamma),interactome,labeled_nodes,pathway,k)
 
 ## TODO: remove k as a requirement.
 def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
@@ -278,6 +287,38 @@ def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     subprocess.call(CALL.split())
     report('HybridLinker-SP','HybridLinker-SP',interactome,labeled_nodes,pathway,k)
 
+def run_HybridLinker_BTB(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute (meaningless here)
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/BowtieBuilder/HL.py'
+    CALL = 'python3 {} {} {}'.format(RUN,interactome,labeled_nodes,)
+    #execute script
+    subprocess.call(CALL.split())
+    report('HybridLinker-BTB','HybridLinker-BTB',interactome,labeled_nodes,pathway,k)
+
+def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute (meaningless here)
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/ResponseNet/HL.py'
+    gamma = 20
+    CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,gamma)
+    #execute script
+    subprocess.call(CALL.split())
+    report('HybridLinker-RN','HybridLinker-RN',interactome,labeled_nodes,pathway,k)
 
 
 def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
@@ -361,9 +402,6 @@ def pr_all():
     global DATA_PATH
     global PLOT_PATH
     global DEST_PATH
-    #hdir = os.listdir('.')
-    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
-    #os.chdir(ndir)
     pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
     pathway_names.remove('')
     print(pathway_names)
@@ -373,8 +411,9 @@ def pr_all():
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         print('runs: {}'.format(runs))
         CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
-        print(CALL)
+        print('CALL: {}'.format(CALL))
         subprocess.call(CALL.split())
+        time.sleep(3)
     #os.chdir(hdir)
 
 
