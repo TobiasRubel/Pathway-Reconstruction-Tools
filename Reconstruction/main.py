@@ -15,6 +15,7 @@
 import subprocess
 import os
 import sys
+import pandas as pd
 import shutil
 import argparse
 import re
@@ -63,7 +64,13 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
         print('directory already existed. Not overwriting.')
     #populate directory
     pred = next(x for x in os.listdir('.') if prediction in x)
-    os.replace(pred,os.path.join(DEST,'ranked-edges.csv'))
+    edest = os.path.join(DEST,'ranked-edges.csv')
+    os.replace(pred,edest)
+    #put pathway name in prediction file
+    df = pd.read_csv(edest,sep='\t')
+    df['pathway_name'] = [pathway.split('/')[-1].split('-')[0] for x in df.index]
+    df.to_csv(edest,sep='\t',index=False)
+
     #exceptions occur when the symlink already exists
     try:
         os.symlink(os.path.join('../../../',pathway),os.path.join(DEST,'ground.csv'))
