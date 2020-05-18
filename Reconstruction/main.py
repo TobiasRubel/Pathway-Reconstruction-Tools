@@ -32,7 +32,7 @@ from multiprocessing import Process
 DEST_PATH = '../Validation/PR/data'
 #for each pathway, plots are to be deposited here.
 #PLOT_PATH = '../Validation/PR/plots'
-PLOT_PATH = 'plots'
+PLOT_PATH = '../plots'
 #all input data is placed here...
 DATA_PATH = '../Pathways'
 
@@ -236,8 +236,6 @@ def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int
     subprocess.call(CALL.split())
     report('PerfectLinker-edges','edges-PerfectLinker',interactome,labeled_nodes,pathway,k)
 
-
-
 def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
     :interactome   path/to/interactome
@@ -253,7 +251,6 @@ def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int
     #execute script
     subprocess.call(CALL.split())
     report('PerfectLinker-nodes','nodes-PerfectLinker',interactome,labeled_nodes,pathway,k)
-
 
 def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -399,6 +396,7 @@ def fetch_arguments(k,pathways):
     return arguments
 
 def pr_all():
+    print('COMPUTING PR FOR METHODS')
     global DATA_PATH
     global PLOT_PATH
     global DEST_PATH
@@ -416,25 +414,27 @@ def pr_all():
         time.sleep(3)
     #os.chdir(hdir)
 
-
-
 def plot_all():
     global DATA_PATH
     global PLOT_PATH
     global DEST_PATH
-    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
+    ## need to check if '-'
+    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH) if '-' in x])
+    print('pathwaynames:',pathway_names)
     RUN = '../Validation/PR/plot_pr.py'
+
     for p in pathway_names:
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
-        print('executing {}:'.format(CALL))
+        print('CALL: {}'.format(CALL))
         subprocess.call(CALL.split())
 
 def main(argv):
     #initialize some values
     with open('main.py','r') as f:
         METHODS = re.findall('run_.*(?=\()',f.read())[:-1]
-    PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if not 'all' in x}
+    ## PATHWAYS directory includes allNPnodes.txt and NP_pathways.zip; make sure that '-' is in the variable.
+    PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if '-' in x and not 'all' in x}
     parser = argparse.ArgumentParser()
     #add optional arguments
     parser.add_argument("--pr_all",action="store_true",help="Compute Precision/Recall plots for all data in DEST_PATH")
