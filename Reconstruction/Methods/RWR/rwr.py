@@ -21,7 +21,7 @@ def run(G, sources, targets, alpha=0.85, verbose=False):
 	## of u by the edge weight and normalizing by the weighted out degree of u.
 	for u in forward_pagerank:
 		for v in G.successors(u): # outgoing neighbors
-			denom = len(list(G.successors(v)))
+			denom = len(list(G.successors(u)))
 			if denom == 0:
 				G[u][v]['forward_flux'] = 0
 			else:
@@ -36,7 +36,7 @@ def run(G, sources, targets, alpha=0.85, verbose=False):
 	## do the reverse of above to get the backward flux for (u,v)
 	for v in backward_pagerank:
 		for u in G.predecessors(v):
-			denom = len(list(G.predecessors(u)))
+			denom = len(list(G.predecessors(v)))
 			if denom == 0:
 				G[u][v]['backward_flux'] = 0
 			else:
@@ -48,7 +48,7 @@ def run(G, sources, targets, alpha=0.85, verbose=False):
 		G[u][v]['flux'] = G[u][v]['forward_flux']*G[u][v]['backward_flux']
 		if G[u][v]['flux'] != 0:
 			edges[(u,v)] = -G[u][v]['flux']
-			
+
 	return edges
 
 ## write the network

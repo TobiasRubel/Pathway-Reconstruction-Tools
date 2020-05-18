@@ -38,6 +38,7 @@ DATA_PATH = '../Pathways'
 
 #except the interactome...
 INTERACTOME = '../Interactomes/PathLinker_2018_human-ppi-weighted-cap0_75.txt'
+#INTERACTOME = '../Interactomes/background-interactome-pathlinker-2015.txt'
 
 EXAMPLE_CONFIG = '../Validation/PR/config.conf'
 #after running an algorithm, we need to create a folder for computing PR
