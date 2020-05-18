@@ -95,6 +95,38 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
 
 ## TODO: remove k as a requirement.
 ## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
+## TODO: this makes intermediate files.
+## TODO: THIS IS AN UNDIRECTED GRAPH and thus the edges may be undirected.
+def run_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+
+    #set up what we need to execute
+    RUN = 'Methods/PCSF/pcsf.py'
+    verbose='True'
+    dummy_edge_weight = 5 ## FIX THIS FOR NOW -- this needs to change.
+    edge_reliability=1
+    degree_penalty=3
+    prize=5
+
+    CALL = 'python3 {} {} {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,dummy_edge_weight,edge_reliability,degree_penalty,prize,verbose)
+    #execute script
+    subprocess.call(CALL.split())
+
+    ## this needs to change (as does the outprefix in pcsf.py)
+    outprefix = 'pcsf-w%d-b%d-g%d-p%d' % (int(dummy_edge_weight),int(edge_reliability),int(degree_penalty),int(prize))
+    print('outprefix:',outprefix)
+
+    report('PCSF',outprefix,interactome,labeled_nodes,pathway,k)
+
+## TODO: remove k as a requirement.
+## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
 ## TODO: this makes an intermediate (.lp) file.  Where should these live?
 def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -288,6 +320,27 @@ def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     subprocess.call(CALL.split())
     report('HybridLinker-RN','HybridLinker-RN',interactome,labeled_nodes,pathway,k)
 
+def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute (meaningless here)
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    #set up what we need to execute
+    RUN = 'Methods/PCSF/HL.py'
+    verbose='True'
+    dummy_edge_weight = 5 ## FIX THIS FOR NOW -- this needs to change.
+    edge_reliability=1
+    degree_penalty=3
+    prize=5
+    CALL = 'python3 {} {} {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,dummy_edge_weight,edge_reliability,degree_penalty,prize,verbose)
+    #execute script
+    subprocess.call(CALL.split())
+    report('HybridLinker-PCSF','HybridLinker-PCSF',interactome,labeled_nodes,pathway,k)
+
 
 def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     """
@@ -370,6 +423,9 @@ def pr_all():
     global DATA_PATH
     global PLOT_PATH
     global DEST_PATH
+    #hdir = os.listdir('.')
+    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
+    #os.chdir(ndir)
     pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
     pathway_names.remove('')
     print(pathway_names)
@@ -379,9 +435,8 @@ def pr_all():
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         print('runs: {}'.format(runs))
         CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
-        print('CALL: {}'.format(CALL))
+        print(CALL)
         subprocess.call(CALL.split())
-        time.sleep(3)
     #os.chdir(hdir)
 
 
