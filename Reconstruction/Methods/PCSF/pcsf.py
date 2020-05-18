@@ -116,7 +116,8 @@ def get_labeled_nodes(fname: str):
 
 def write_output(G,outfile,verbose=False):
 	out = open(outfile,'w')
-	out.write('#nodeA\tnodeB\n')
+	out.write('#tail\thead\n')
+
 	seen = set()
 	for u,v in G.edges():
 		if (v,u) in seen:
