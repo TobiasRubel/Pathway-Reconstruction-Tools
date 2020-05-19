@@ -1,4 +1,32 @@
-## Generating the node motivation figure.
+# Pipelines for Generating Figures
+
+## Generating the composite figures
+
+1. Run all PR and visualizations for existing methods
+
+```
+python3 main.py --pr_all --plot_all
+````
+
+2. Generate the pathway union
+
+```
+python3 gen_pathway_union.py
+```
+
+3. Make PR with composite files only
+
+```
+python3 make_pr.py data $(ls data | grep composit)
+```
+
+4. Plot PR with composite files only. First set `COMPOSITE=True` in `plot_pr.py`. Then, run
+
+```
+python3 plot_pr.py data plots $(ls data | grep composit)
+```
+
+## Generating the node motivation figure
 
 1. Run the following code to get predictions for the five relevant methods. (TODO need to add RWR)
 
