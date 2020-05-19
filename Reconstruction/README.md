@@ -1,6 +1,6 @@
 # Pipelines for Generating Figures
 
-## Generating the composite figures
+## 1. Generating the composite figures (nearly done except for RWR)
 
 1. Run all PR and visualizations for existing methods
 
@@ -26,7 +26,7 @@ python3 make_pr.py data $(ls data | grep composit)
 python3 plot_pr.py data plots $(ls data | grep composit)
 ```
 
-## Generating the node motivation figure
+## 2. Generating the node motivation figure
 
 1. Run the following code to get predictions for the five relevant methods. (TODO need to add RWR)
 
@@ -51,3 +51,24 @@ Final file is here:
 ```
 ../../../plots/node-motivation-BowtieBuilder-PathLinker-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.png
 ```
+
+## 3. Benchmark figures:
+
+Pick PL as input methods for all pathways; plot composite.
+
+### DFS/BFS and weighted/unweighted (easy to do)
+
+### varying k in PL (easy to do, take a bit of time run)
+
+Lets set `k=[50,100,500,1000,5000,10000]`
+
+### make variance plots (nearly done)
+
+Pick pathways of interest (Wnt) & methods of interest.  
+
+## 4. Generating Networks (not started)
+
+## Others?
+
+### Prediction overlaps (venn or heatmap)
+### subset composte on small/med pathways
