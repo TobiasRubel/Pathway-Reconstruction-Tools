@@ -62,7 +62,7 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
     try:
         os.mkdir(DEST)
     except:
-        print('directory already existed. Not overwriting.')
+        print('directory "%s" already existed. Not overwriting.' % (DEST))
     #populate directory
     pred = next(x for x in os.listdir('.') if prediction in x)
     edest = os.path.join(DEST,'ranked-edges.csv')
@@ -83,6 +83,15 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
         pass
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
+## return True if file exists, False otherwise.
+def outfile_exists(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,pathway:str, k:int):
+    global DEST_PATH
+    i = interactome.split('/')[-1].split('.')[0]
+    p = '-'.join(labeled_nodes.split('/')[-1].split('-')[:-1])
+    name = '_'.join([algorithm,i,p,str(k)])
+    DEST = os.path.join(DEST_PATH,name)
+    edge_dest = os.path.join(DEST,'ranked-edges.csv')
+    return os.path.isfile(edge_dest)
 
 #
 #standardize running methods via wrappers.
@@ -98,7 +107,7 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
 ## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
 ## TODO: this makes intermediate files.
 ## TODO: THIS IS AN UNDIRECTED GRAPH and thus the edges may be undirected.
-def run_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -107,29 +116,32 @@ def run_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
-
-    #set up what we need to execute
-    RUN = 'Methods/PCSF/pcsf.py'
-    verbose='True'
     dummy_edge_weight = 5 ## FIX THIS FOR NOW -- this needs to change.
     edge_reliability=1
     degree_penalty=3
     prize=5
+    outprefix = 'pcsf-w%d-b%d-g%d-p%d' % (int(dummy_edge_weight),int(edge_reliability),int(degree_penalty),int(prize))
+    if not force and outfile_exists('PCSF', outprefix,interactome,labeled_nodes,pathway,k):
+        print('PCSF Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/PCSF/pcsf.py'
+    verbose='True'
+
 
     CALL = 'python3 {} {} {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,dummy_edge_weight,edge_reliability,degree_penalty,prize,verbose)
     #execute script
     subprocess.call(CALL.split())
 
     ## this needs to change (as does the outprefix in pcsf.py)
-    outprefix = 'pcsf-w%d-b%d-g%d-p%d' % (int(dummy_edge_weight),int(edge_reliability),int(degree_penalty),int(prize))
     print('outprefix:',outprefix)
-
     report('PCSF',outprefix,interactome,labeled_nodes,pathway,k)
 
 ## TODO: remove k as a requirement.
 ## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
 ## TODO: this makes an intermediate (.lp) file.  Where should these live?
-def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -138,10 +150,15 @@ def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> Non
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    gamma = 20 ## FIX THIS FOR NOW -- this needs to change.
+    if not force and outfile_exists('ResponseNet', 'response_net_gamma_{}'.format(gamma),interactome,labeled_nodes,pathway,k):
+        print('ResponseNet Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/ResponseNet/response_net.py'
     verbose='True'
-    gamma = 20 ## FIX THIS FOR NOW -- this needs to change.
+
     CALL = 'python3 {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,gamma,verbose)
     #execute script
     subprocess.call(CALL.split())
@@ -149,7 +166,7 @@ def run_ResponseNet(interactome:str,labeled_nodes:str,pathway:str,k: int) -> Non
     report('ResponseNet','response_net_gamma_{}'.format(gamma),interactome,labeled_nodes,pathway,k)
 
 ## TODO: remove k as a requirement.
-def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -158,6 +175,10 @@ def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    if not force and outfile_exists('BowtieBuilder', 'bowtie_builder',interactome,labeled_nodes,pathway,k):
+        print('BowtieBuilder Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/BowtieBuilder/bowtie_builder.py'
     verbose='True'
@@ -167,7 +188,7 @@ def run_BowtieBuilder(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     report('BowtieBuilder','bowtie_builder',interactome,labeled_nodes,pathway,k)
 
 ## TODO: remove k as a requirement.
-def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -176,6 +197,11 @@ def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('ShortestPaths', 'shortest_paths',interactome,labeled_nodes,pathway,k):
+        print('ShortestPaths Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/ShortestPaths/shortest_paths.py'
     verbose='True'
@@ -184,7 +210,7 @@ def run_ShortestPaths(interactome:str,labeled_nodes:str,pathway:str,k: int) -> N
     subprocess.call(CALL.split())
     report('ShortestPaths','shortest_paths',interactome,labeled_nodes,pathway,k)
 
-def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -193,6 +219,10 @@ def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    if not force and outfile_exists('PathLinker', 'PathLinker',interactome,labeled_nodes,pathway,k):
+        print('PathLinker Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/PathLinker/run.py'
     CALL = 'python2.7 {} -k {} -o PathLinker {} {}'.format(RUN,k,interactome,labeled_nodes)
@@ -200,7 +230,7 @@ def run_PathLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None
     subprocess.call(CALL.split())
     report('PathLinker','PathLinker',interactome,labeled_nodes,pathway,k)
 
-def run_LocPL(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_LocPL(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -209,6 +239,10 @@ def run_LocPL(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    if not force and outfile_exists('Localized-PathLinker', 'Localized-PathLinker',interactome,labeled_nodes,pathway,k):
+        print('Localized-PathLinker Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/localized-pathlinker/Loc_PL_run.py'
     PROTEIN_LOC = 'Methods/localized-pathlinker/Data/Protein_Localization_Scores.txt'
@@ -219,7 +253,7 @@ def run_LocPL(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
     #make directory for run.
     report('Localized-PathLinker','LocalizedPathLinker',interactome,labeled_nodes,pathway,k)
 
-def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -228,6 +262,11 @@ def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('PerfectLinker-edges', 'edges-PerfectLinker',interactome,labeled_nodes,pathway,k):
+        print('PerfectLinker-edges Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/PerfectLinker/PL.py'
     CALL = 'python3 {} edges {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
@@ -237,7 +276,11 @@ def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int
     subprocess.call(CALL.split())
     report('PerfectLinker-edges','edges-PerfectLinker',interactome,labeled_nodes,pathway,k)
 
+<<<<<<< HEAD
 def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+=======
+def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
+>>>>>>> mergetest
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -246,6 +289,11 @@ def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('PerfectLinker-nodes', 'nodes-PerfectLinker',interactome,labeled_nodes,pathway,k):
+        print('PerfectLinker-nodes Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/PerfectLinker/PL.py'
     CALL = 'python3 {} nodes {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
@@ -253,7 +301,11 @@ def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int
     subprocess.call(CALL.split())
     report('PerfectLinker-nodes','nodes-PerfectLinker',interactome,labeled_nodes,pathway,k)
 
+<<<<<<< HEAD
 def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+=======
+def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
+>>>>>>> mergetest
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -262,6 +314,11 @@ def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> No
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker', 'HybridLinker',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/HybridLinker/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
@@ -269,7 +326,7 @@ def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int) -> No
     subprocess.call(CALL.split())
     report('HybridLinker','HybridLinker',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -278,6 +335,11 @@ def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker-SP', 'HybridLinker-SP',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-SP Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/ShortestPaths/HL.py'
     CALL = 'python3 {} {} {}'.format(RUN,interactome,labeled_nodes,)
@@ -285,7 +347,7 @@ def run_HybridLinker_SP(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     subprocess.call(CALL.split())
     report('HybridLinker-SP','HybridLinker-SP',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_BTB(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_BTB(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -294,6 +356,10 @@ def run_HybridLinker_BTB(interactome:str,labeled_nodes:str,pathway:str,k: int) -
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    if not force and outfile_exists('HybridLinker-BTB', 'HybridLinker-BTB',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-BTB Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/BowtieBuilder/HL.py'
     CALL = 'python3 {} {} {}'.format(RUN,interactome,labeled_nodes,)
@@ -301,7 +367,7 @@ def run_HybridLinker_BTB(interactome:str,labeled_nodes:str,pathway:str,k: int) -
     subprocess.call(CALL.split())
     report('HybridLinker-BTB','HybridLinker-BTB',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -310,6 +376,11 @@ def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker-RN', 'HybridLinker-RN',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-RN Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/ResponseNet/HL.py'
     gamma = 20
@@ -318,7 +389,7 @@ def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int) ->
     subprocess.call(CALL.split())
     report('HybridLinker-RN','HybridLinker-RN',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -327,6 +398,11 @@ def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) 
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker-PCSF', 'HybridLinker-PCSF',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-PCSF Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/PCSF/HL.py'
     verbose='True'
@@ -340,7 +416,7 @@ def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int) 
     report('HybridLinker-PCSF','HybridLinker-PCSF',interactome,labeled_nodes,pathway,k)
 
 
-def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -349,6 +425,11 @@ def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker-BFS', 'HybridLinker-BFS',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-BFS Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/HybridLinker-BFS/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
@@ -356,7 +437,7 @@ def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int) -
     subprocess.call(CALL.split())
     report('HybridLinker-BFS','HybridLinker-BFS',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -365,6 +446,11 @@ def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+
+    if not force and outfile_exists('HybridLinker-BFS-Weighted', 'HybridLinker-BFS-Weighted',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-BFS-Weighted Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/HybridLinker-BFS-Weighted/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
@@ -372,7 +458,7 @@ def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     subprocess.call(CALL.split())
     report('HybridLinker-BFS-Weighted','HybridLinker-BFS-Weighted',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -381,6 +467,10 @@ def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
+    if not force and outfile_exists('HybridLinker-DFS-Weighted', 'HybridLinker-DFS-Weighted',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-DFS-Weighted Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
     #set up what we need to execute
     RUN = 'Methods/HybridLinker-DFS-Weighted/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
@@ -408,13 +498,13 @@ def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k:
 
 #running the experiment
 
-def fetch_arguments(k,pathways):
+def fetch_arguments(k,pathways,force):
     global DATA_PATH
     global INTERACTOME
     pathways = {frozenset((x,y)) for x in os.listdir(DATA_PATH) for y in os.listdir(DATA_PATH) if x.split('-')[:-1] == y.split('-')[:-1] and x != y and x.split('-')[0] in pathways}
     sorted_pathways = [sorted(tuple(x),key = lambda x: x.split('-')[-1]) for x in pathways]
     processed_pathways = [(os.path.join(DATA_PATH,x),os.path.join(DATA_PATH,y)) for (x,y) in sorted_pathways]
-    arguments = [(INTERACTOME,y,x,k) for (x,y) in processed_pathways]
+    arguments = [(INTERACTOME,y,x,k,force) for (x,y) in processed_pathways]
     return arguments
 
 def pr_all():
@@ -435,9 +525,40 @@ def pr_all():
         print('runs: {}'.format(runs))
         CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
         print(CALL)
-        subprocess.call(CALL.split())
+        #subprocess.call(CALL.split())
     #os.chdir(hdir)
 
+<<<<<<< HEAD
+=======
+def pr_node_motivation(pathway_names,):
+    print('COMPUTING PR FOR NODE MOTIVATION')
+    global DATA_PATH
+    global PLOT_PATH
+    global DEST_PATH
+    #hdir = os.listdir('.')
+    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
+    #os.chdir(ndir)
+    print(pathway_names)
+    methods = ['ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
+        'PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
+        'BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']#,\
+        #'PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
+        #'ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']
+    RUN = '../Validation/PR/make_node_motivation_pr.py'
+    for p in pathway_names:
+        print('p: {}'.format(p))
+        runs = " ".join(methods)
+        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
+        print(CALL)
+        subprocess.call(CALL.split())
+        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,True,runs)
+        print(CALL)
+        subprocess.call(CALL.split())
+        print()
+
+    #os.chdir(hdir)
+
+>>>>>>> mergetest
 def plot_all():
     global DATA_PATH
     global PLOT_PATH
@@ -451,7 +572,11 @@ def plot_all():
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
         print('CALL: {}'.format(CALL))
+<<<<<<< HEAD
         subprocess.call(CALL.split())
+=======
+        #subprocess.call(CALL.split())
+>>>>>>> mergetest
 
 def main(argv):
     #initialize some values
@@ -461,8 +586,10 @@ def main(argv):
     PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if '-' in x and not 'all' in x}
     parser = argparse.ArgumentParser()
     #add optional arguments
+    parser.add_argument("--force",action="store_true",help="Run method even if outfile exists in the correct place. Default false.")
     parser.add_argument("--pr_all",action="store_true",help="Compute Precision/Recall plots for all data in DEST_PATH")
     parser.add_argument("--plot_all",action="store_true",help="Plot Precision/Recall plots for all data in DEST_PATH")
+    parser.add_argument("--node_pr",action="store_true",help='Plot node motiavation precision/recall, which is a little different than the typical PR.')
     parser.add_argument("-p","--pathways",nargs="+",help="A list of pathways to make predictions for. Possible options are:\n{}".format("\n".join(PATHWAYS.union({'all'}))))
     parser.add_argument("-m","--methods",nargs="+",help="A list of algorithms to run. Possible options are:\n{}".format("\n".join(METHODS+['all'])))
     parser.add_argument('-k',type=int,default=10000,help="k value to pass to PathLinker. Defaults to 10,000.")
@@ -472,8 +599,11 @@ def main(argv):
         PATHWAYS = args.pathways
     if args.methods != ['all']:
         METHODS = args.methods
+    else: ## remove paramsweep & locPL
+        METHODS.remove('run_HybridLinker_paramsweep')
+        METHODS.remove('run_LocPL')
     if METHODS != None and PATHWAYS != None:
-        ARGS = fetch_arguments(args.k,PATHWAYS)
+        ARGS = fetch_arguments(args.k,PATHWAYS,args.force)
         for arg in ARGS:
                 print('running all methods on {}'.format(arg))
                 lat = []
@@ -485,6 +615,8 @@ def main(argv):
                     l.join()
     if args.pr_all:
         pr_all()
+    if args.node_pr:
+        pr_node_motivation(PATHWAYS)
     if args.plot_all:
         plot_all()
 
