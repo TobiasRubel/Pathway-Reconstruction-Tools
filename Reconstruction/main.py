@@ -276,6 +276,7 @@ def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int
     subprocess.call(CALL.split())
     report('PerfectLinker-edges','edges-PerfectLinker',interactome,labeled_nodes,pathway,k)
 
+
 def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
@@ -520,7 +521,8 @@ def pr_all():
         #subprocess.call(CALL.split())
     #os.chdir(hdir)
 
-def pr_node_motivation(pathway_names,):
+
+def pr_node_motivation(pathway_names):
     print('COMPUTING PR FOR NODE MOTIVATION')
     global DATA_PATH
     global PLOT_PATH
@@ -561,7 +563,7 @@ def plot_all():
         runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
         CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
         print('CALL: {}'.format(CALL))
-        #subprocess.call(CALL.split())
+        subprocess.call(CALL.split())
 
 def main(argv):
     #initialize some values
