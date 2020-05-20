@@ -522,7 +522,7 @@ def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,
     subprocess.call(CALL.split())
     report('HybridLinker-DFS-Weighted','HybridLinker-DFS-Weighted',interactome,labeled_nodes,pathway,k)
 
-def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k: int) -> None:
+def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -533,7 +533,7 @@ def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k:
     """
     #set up what we need to execute
     RUN = 'Methods/HybridLinker/main.py'
-    for i in [50,75,100,150,200,300,400]:
+    for i in [50,100,500,1000,5000,10000]:
         CALL = 'python3 {} {} {} {} {}'.format(RUN,i,interactome,labeled_nodes,pathway)
         #execute script
         print(CALL)

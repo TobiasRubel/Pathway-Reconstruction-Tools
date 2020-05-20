@@ -83,10 +83,14 @@ def main(argv):
     then re-run pathlinker
     """
     #do first run
-    os.chdir('../PathLinker')
+    os.chdir('Methods/PathLinker')
     os.system('rm tmp*')
     k,network,sources,pathway = argv[1],argv[2],argv[3],argv[4]
-    argv = ['python2','run.py']+['-k',k]+['-o','tmp']+argv[2:4]
+    #we need to modify network,pathway paths
+    network = os.path.join('../../',network)
+    pathway = os.path.join('../../',pathway)
+    sources = os.path.join('../../',sources)
+    argv = ['python2','run.py']+['-k',k]+['-o','tmp']+[network,sources,]
     print(argv)
     subprocess.call(argv)
     #generate new interactome
@@ -100,12 +104,8 @@ def main(argv):
     os.chdir('../PerfectLinker-BFS')
     print('Doing second run')
     argv_2 = ['python3','PL.py','nodes',network,'../PathLinker/tmp-interactome.csv',sources]
-    #argv_2 = ['python3','PL.py','nodes','../PathLinker/tmp-interactome.csv',pathway,sources]
     subprocess.call(argv_2)
-    os.replace('nodes-PerfectLinker-BFS.csv','../validation_test/HybridLinker-BFS.csv')
-    
-
-
+    os.replace('nodes-PerfectLinker-BFS.csv','../../HybridLinker-BFS.csv')
 
 
 if __name__ == "__main__":
