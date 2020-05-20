@@ -26,12 +26,12 @@ python3 make_pr.py data $(ls data | grep composit)
 python3 plot_pr.py data plots $(ls data | grep composit)
 ```
 
-## 2. Generating the node motivation figure
+## 2. Generating the node motivation figure (Anna -- a little broken)
 
-1. Run the following code to get predictions for the five relevant methods. (TODO need to add RWR)
+1. Run the following code to get predictions for the five relevant methods.
 
 ```
-python3 main.py -p Wnt -m run_PCSF run_ResponseNet run_BowtieBuilder run_ShortestPaths run_PathLinker
+python3 main.py -p Wnt -m run_PCSF run_ResponseNet run_BowtieBuilder run_ShortestPaths run_PathLinker run_RWR
 ```
 
 2. Run the node PR for these, subsampling 50X nodes and also ignoring adjacents: (TODO need to add RN, PCSF)
@@ -40,10 +40,10 @@ python3 main.py -p Wnt -m run_PCSF run_ResponseNet run_BowtieBuilder run_Shortes
 python3 main.py --node_pr -p Wnt
 ```
 
-3. Plot the methods.
+3. Plot the methods. Set `COMPOSITE=False` and `NODE_MOTIVATION=True` in `plot_pr.py` and then run:
 
 ```
-python3 ../Validation/PR/plot_pr.py ../Validation/PR/data ../../../plots ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000
+python3 ../Validation/PR/plot_pr.py ../Validation/PR/data ../../../plots PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000
 ```
 
 Final file is here:
@@ -56,17 +56,17 @@ Final file is here:
 
 Pick PL as input methods for all pathways; plot composite.
 
-### DFS/BFS and weighted/unweighted (easy to do)
+### 3a. DFS/BFS and weighted/unweighted (easy to do)
 
-### varying k in PL (easy to do, take a bit of time run)
+### 3b. varying k in PL (easy to do, take a bit of time run)
 
 Lets set `k=[50,100,500,1000,5000,10000]`
 
-### make variance plots (nearly done)
+### 3c. make variance plots (nearly done)
 
 Pick pathways of interest (Wnt) & methods of interest.  
 
-## 4. Generating Networks (not started)
+## 4. Generating Networks (Anna -- not started)
 
 ## Others?
 

@@ -11,7 +11,7 @@ from math import log as math_log
 
 ## uses NetworkX's pagerank:
 ## https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.link_analysis.pagerank_alg.pagerank.html#networkx.algorithms.link_analysis.pagerank_alg.pagerank
-def run(G, sources, targets, alpha=0.85, verbose=False):
+def run(G, sources, targets, alpha=0.85, thres=0.80, verbose=False):
 
 	## run RWR from sources
 	print('forward flux calculation...')
@@ -20,43 +20,57 @@ def run(G, sources, targets, alpha=0.85, verbose=False):
 	## We compute flux score for edge (u, v) by multiplying the visitation probability
 	## of u by the edge weight and normalizing by the weighted out degree of u.
 	for u in forward_pagerank:
+		denom = len(list(G.successors(u)))
 		for v in G.successors(u): # outgoing neighbors
-			denom = len(list(G.successors(u)))
-			if denom == 0:
-				G[u][v]['forward_flux'] = 0
-			else:
-				G[u][v]['forward_flux'] = forward_pagerank[u]*G[u][v]['weight']/denom
+			G[u][v]['forward_flux'] = forward_pagerank[u]*G[u][v]['weight']/denom
 
 	print('backward flux calculation...')
 	personalization = {t:1/len(targets) for t in targets}
 	G_rev = G.reverse(copy=True)
 	backward_pagerank = nx.pagerank(G_rev,alpha=alpha,personalization=personalization,weight='weight')
-	## We compute flux score for edge (u, v) by multiplying the visitation probability
-	## of u by the edge weight and normalizing by the weighted out degree of u.
-	## do the reverse of above to get the backward flux for (u,v)
+	## BACKWARD: We compute BACKWARDS flux score for edge (u, v) by multiplying the visitation probability
+	## of v by the edge weight and normalizing by the weighted IN degree of v.
 	for v in backward_pagerank:
+		denom = len(list(G.predecessors(v)))
 		for u in G.predecessors(v):
-			denom = len(list(G.predecessors(v)))
-			if denom == 0:
-				G[u][v]['backward_flux'] = 0
-			else:
-				G[u][v]['backward_flux'] = backward_pagerank[v]*G[u][v]['weight']/denom
+			G[u][v]['backward_flux'] = backward_pagerank[v]*G[u][v]['weight']/denom
 
 	## combine flux
-	edges = {} #dictionary of (u,v): -flux
+	print('combining fluxes...')
+	tot_flux = 0
 	for u,v in G.edges():
-		G[u][v]['flux'] = G[u][v]['forward_flux']*G[u][v]['backward_flux']
-		if G[u][v]['flux'] != 0:
-			edges[(u,v)] = -G[u][v]['flux']
+		#print(G[u][v]['forward_flux'],G[u][v]['backward_flux'])
+		if G[u][v]['forward_flux'] == 0 or G[u][v]['backward_flux'] == 0:
+			G[u][v]['neglog_combined_flux'] = sys.float_info.max ## maximum float value
+			G[u][v]['combined_flux'] = 0
+		else:
+			G[u][v]['neglog_combined_flux'] = - (math_log(G[u][v]['forward_flux']) + math_log(G[u][v]['backward_flux']))
+			G[u][v]['combined_flux'] = G[u][v]['forward_flux']*G[u][v]['backward_flux']
+			tot_flux+=G[u][v]['combined_flux']
+
+	print('sorting and taking predictions that comprise %f of total flux' % (thres))
+	edges = {} #dictionary of (u,v): -log(flux*flux)
+	running_sum = 0
+	counter = 0
+	## iterate through edges sorted by -log(flux*flux)
+	for u,v,d in sorted(G.edges(data=True), key=lambda t: t[2]['neglog_combined_flux']):
+		edges[(u,v)] = G[u][v]['neglog_combined_flux']
+		running_sum+=G[u][v]['combined_flux']
+		counter+=1
+		if counter % 1000 == 0:
+			print('%d of %d: %d of %d (%f)' % (counter,len(G.edges()),running_sum,tot_flux,running_sum/tot_flux))
+		if running_sum/tot_flux > thres:
+			print('theshold of %f limits predictions to %d edges'  %(thres,len(edges)))
+			break
 
 	return edges
 
 ## write the network
 def write_output(edges,outfile,verbose=False):
 	out = open(outfile,'w')
-	out.write('#tail\thead\t-score\n')
+	out.write('#tail\thead\trank\n')
 	for u,v in edges.keys():
-		out.write('%s\t%s\t%e\n' % (u,v,edges[(u,v)]))
+		out.write('%s\t%s\t%f\n' % (u,v,edges[(u,v)]))
 	out.close()
 	if verbose:
 		print('wrote to %s' % (outfile))
@@ -109,17 +123,18 @@ def main(argv):
 	interactome = argv[1]
 	labeled_nodes = argv[2]
 	alpha = float(argv[3]) ## teleportation prob.
-	verbose = bool(argv[4])
+	thres = float(argv[4]) ## percentile threshold
+	verbose = bool(argv[5])
 
 	print('preprocessing inputs...')
 	interactome = df_to_graph(interactome)
 	sources,sinks = get_labeled_nodes(labeled_nodes)
 
 	print('making prediction...')
-	prediction = run(interactome, sources, sinks, alpha=alpha, verbose=verbose)
+	prediction = run(interactome, sources, sinks, alpha=alpha, thres=thres, verbose=verbose)
 
 	print('saving prediction...')
-	write_output(prediction,'rwr_q%.2f.csv' % (alpha),verbose=verbose)
+	write_output(prediction,'rwr_alpha{}_thres{}.csv'.format(alpha,thres),verbose=verbose)
 
 	return
 

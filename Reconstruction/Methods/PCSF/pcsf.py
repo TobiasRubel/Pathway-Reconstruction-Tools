@@ -157,10 +157,7 @@ def main(argv):
     print('saving prediction...')
     write_output(forest, '%s.csv' % (outprefix),verbose=verbose)
 
-    return 
+    return
 
 if __name__ == '__main__':
     main(sys.argv)
-
-
-

@@ -90,7 +90,7 @@ def main(argv):
     network = os.path.join('../../',network)
     pathway = os.path.join('../../',pathway)
     sources = os.path.join('../../',sources)
-    argv = ['python2','run.py']+['-k',k]+['-o','tmp']+[network,sources,]
+    argv = ['python2.7','run.py']+['-k',k]+['-o','tmp']+[network,sources,]
     print(argv)
     subprocess.call(argv)
     #generate new interactome

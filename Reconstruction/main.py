@@ -63,8 +63,9 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
         os.mkdir(DEST)
     except:
         print('directory "%s" already existed. Not overwriting.' % (DEST))
-    #populate directory
-    pred = next(x for x in os.listdir('.') if prediction in x)
+    #populate directory (make sure it's a csv file)
+    #print([x for x in os.listdir('.') if prediction in x])
+    pred = next(x for x in os.listdir('.') if prediction in x and '.csv' in x)
     edest = os.path.join(DEST,'ranked-edges.csv')
     os.replace(pred,edest)
     #put pathway name in prediction file
@@ -129,7 +130,8 @@ def run_RWR(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) ->
     :side-effect   makes a dest directory with predicted pathway
     """
     alpha = 0.85 ## FIX THIS FOR NOW -- this needs to change.
-    if not force and outfile_exists('ResponseNet', 'rwr_q{}'.format(alpha),interactome,labeled_nodes,pathway,k):
+    thres = 0.50 ## default parameter now - predicted edes should capture this percentage of flux.
+    if not force and outfile_exists('RWR', 'rwr_alpha{}_thres{}'.format(alpha,thres),interactome,labeled_nodes,pathway,k):
         print('ResponseNet Outfile Exists. Not overwriting: use --force to overwrite.')
         return
 
@@ -137,10 +139,11 @@ def run_RWR(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) ->
     RUN = 'Methods/RWR/rwr.py'
     verbose='True'
 
-    CALL = 'python3 {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha,verbose)
+    CALL = 'python3 {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha,thres,verbose)
+    print(CALL)
     #execute script
     subprocess.call(CALL.split())
-    report('RWR','rwr_q{}'.format(alpha),interactome,labeled_nodes,pathway,k)
+    report('RWR','rwr_alpha{}_thres{}'.format(alpha,thres),interactome,labeled_nodes,pathway,k)
 
 
 
@@ -598,9 +601,10 @@ def pr_node_motivation(pathway_names):
     print(pathway_names)
     methods = ['ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
         'PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']#,\
-        #'PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        #'ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']
+        'BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
+        'PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
+        'ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',
+        'RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']
     RUN = '../Validation/PR/make_node_motivation_pr.py'
     for p in pathway_names:
         print('p: {}'.format(p))
