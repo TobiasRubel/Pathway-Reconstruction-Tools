@@ -104,6 +104,34 @@ def outfile_exists(algorithm:str, prediction: str,interactome: str, labeled_node
 
 
 ## TODO: remove k as a requirement.
+## TODO: HOW TO CHANGE ALPHA??? THis should be a parameter (like k).
+## TODO: this makes an intermediate (.lp) file.  Where should these live?
+def run_RWR(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    alpha = 0.85 ## FIX THIS FOR NOW -- this needs to change.
+    if not force and outfile_exists('ResponseNet', 'rwr_q{}'.format(alpha),interactome,labeled_nodes,pathway,k):
+        print('ResponseNet Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/RWR/rwr.py'
+    verbose='True'
+
+    CALL = 'python3 {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha,verbose)
+    #execute script
+    subprocess.call(CALL.split())
+    report('RWR','rwr_q{}'.format(alpha),interactome,labeled_nodes,pathway,k)
+
+
+
+## TODO: remove k as a requirement.
 ## TODO: HOW TO CHANGE GAMMA??? THis should be a parameter (like k).
 ## TODO: this makes intermediate files.
 ## TODO: THIS IS AN UNDIRECTED GRAPH and thus the edges may be undirected.
@@ -381,6 +409,29 @@ def run_HybridLinker_RN(interactome:str,labeled_nodes:str,pathway:str,k: int,for
     #execute script
     subprocess.call(CALL.split())
     report('HybridLinker-RN','HybridLinker-RN',interactome,labeled_nodes,pathway,k)
+
+def run_HybridLinker_RWR(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute (meaningless here)
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+
+    if not force and outfile_exists('HybridLinker-RN', 'HybridLinker-RN',interactome,labeled_nodes,pathway,k):
+        print('HybridLinker-RN Outfile Exists. Not overwriting: use --force to overwrite.')
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/RWR/HL.py'
+    alpha = 0.85
+    CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha)
+    #execute script
+    subprocess.call(CALL.split())
+    report('HybridLinker-RWR','HybridLinker-RWR',interactome,labeled_nodes,pathway,k)
+
 
 def run_HybridLinker_PCSF(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
