@@ -83,31 +83,29 @@ def main(argv):
     then re-run pathlinker
     """
     #do first run
-    os.chdir('../PathLinker')
+    os.chdir('Methods/PathLinker')
     os.system('rm tmp*')
     k,network,sources,pathway = argv[1],argv[2],argv[3],argv[4]
-    argv = ['python2','run.py']+['-k',k]+['-o','tmp']+argv[2:4]
+    #we need to modify network,pathway paths
+    network = os.path.join('../../',network)
+    pathway = os.path.join('../../',pathway)
+    sources = os.path.join('../../',sources)
+    argv = ['python2','run.py']+['-k',k]+['-o','tmp']+[network,sources,]
     print(argv)
     subprocess.call(argv)
     #generate new interactome
     pedges = next(x for x in os.listdir('.') if 'tmp' in x)
-    print('pedges = {}'.format(pedges))
     V = gen_vertices(pedges)
     G = df_to_graph(network) 
     H = gen_graph(V,G,k=0)
-    print(H.edges)
+    #print(H.edges)
     graph_to_file(H)
     #do second run
-    os.chdir('../PerfectLinker-DFS-Weighted')
     print('Doing second run')
-    #argv_2 = ['python3','PL.py','nodes','../PathLinker/tmp-interactome.csv',pathway,sources]
+    os.chdir('../PerfectLinker-DFS-Weighted')
     argv_2 = ['python3','PL.py','nodes',network,'../PathLinker/tmp-interactome.csv',sources]
     subprocess.call(argv_2)
-    os.replace('nodes-PerfectLinker-DFS-Weighted.csv','../validation_test/HybridLinker-DFS-Weighted.csv')
-    
-
-
-
+    os.replace('nodes-PerfectLinker-DFS-Weighted.csv','../../HybridLinker-DFS-Weighted.csv')
 
 if __name__ == "__main__":
     main(sys.argv)
