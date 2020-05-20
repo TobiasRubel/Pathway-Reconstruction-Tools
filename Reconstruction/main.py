@@ -78,20 +78,33 @@ def report(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,p
     except Exception as e:
         pass
     try:
+        pathway_nodes = pathway.replace('-edges','-nodes')
+        os.symlink(os.path.join('../../../',pathway_nodes),os.path.join(DEST,'ground-nodes.csv'))
+    except Exception as e:
+        pass
+    try:
         os.symlink(os.path.join('../../../',interactome),os.path.join(DEST,'interactome.csv'))
     except Exception as e:
         pass
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
 ## return True if file exists, False otherwise.
-def outfile_exists(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,pathway:str, k:int):
-    global DEST_PATH
-    i = interactome.split('/')[-1].split('.')[0]
-    p = '-'.join(labeled_nodes.split('/')[-1].split('-')[:-1])
-    name = '_'.join([algorithm,i,p,str(k)])
-    DEST = os.path.join(DEST_PATH,name)
+def outfile_exists(algorithm:str, prediction: str,interactome: str, labeled_nodes: str,pathway:str, k:int) -> str:
+    DEST = get_outdir(algorithm,interactome,pathway,k)
+    print(DEST)
     edge_dest = os.path.join(DEST,'ranked-edges.csv')
     return os.path.isfile(edge_dest)
+
+def get_outdir(algorithm:str, interactome: str, pathway:str, k:int) -> str:
+    global DEST_PATH
+    i = interactome.split('/')[-1].split('.')[0]
+    if '-' in pathway:
+        p = '-'.join(pathway.split('/')[-1].split('-')[:-1])
+    else:
+        p = pathway
+    name = '_'.join([algorithm,i,p,str(k)])
+    DEST = os.path.join(DEST_PATH,name)
+    return DEST
 
 #
 #standardize running methods via wrappers.
@@ -316,6 +329,7 @@ def run_HybridLinker(interactome:str,labeled_nodes:str,pathway:str,k: int,force:
     RUN = 'Methods/HybridLinker/main.py'
     CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
     #execute script
+    print(CALL)
     subprocess.call(CALL.split())
     report('HybridLinker','HybridLinker',interactome,labeled_nodes,pathway,k)
 
@@ -579,6 +593,7 @@ def main(argv):
     parser.add_argument("--node_pr",action="store_true",help='Plot node motiavation precision/recall, which is a little different than the typical PR.')
     parser.add_argument("-p","--pathways",nargs="+",help="A list of pathways to make predictions for. Possible options are:\n{}".format("\n".join(PATHWAYS.union({'all'}))))
     parser.add_argument("-m","--methods",nargs="+",help="A list of algorithms to run. Possible options are:\n{}".format("\n".join(METHODS+['all'])))
+    parser.add_argument("--post_graphs",nargs=2,default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
     parser.add_argument('-k',type=int,default=10000,help="k value to pass to PathLinker. Defaults to 10,000.")
     parser.add_argument('-y',type=int,default=20,help="gamma value to pass to ResponseNet. Defaults to 20.")
     args = parser.parse_args()
@@ -606,6 +621,22 @@ def main(argv):
         pr_node_motivation(PATHWAYS)
     if args.plot_all:
         plot_all()
+    if args.post_graphs[0] != None:
+        # runs this serially.
+        username,password = args.post_graphs
+        is_draft=True
+        for p in PATHWAYS:
+            print(p)
+            for m in METHODS:
+                print('  ',m)
+                algorithm = m.split('_')[-1]
+                name = '%s-%s' % (p,algorithm)
+                directory = get_outdir(algorithm,INTERACTOME,p,args.k)
+                #print(username,password,name,directory,draft)
+                RUN = '../Misc/visualize_networks/post_graphspace_graph.py'
+                CALL = 'python3 {} {} {} {} {} {}'.format(RUN,username,password,name,directory,is_draft)
+                print(CALL)
+                subprocess.call(CALL.split())
 
 if __name__ == "__main__":
     main(sys.argv)
