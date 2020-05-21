@@ -64,10 +64,10 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 					weight = G[u][v]['weight']
 					cost = G[u][v]['cost']
 					edge_popup[u][v] = '<b>Edge Weight</b>: %.4f<br><b>Edge Cost</b>: %.4f<br>' % (weight,cost)
-				edge_popup[u][v] += '----------------<br>'
+				edge_popup[u][v] += '------<br>'
 			for i in range(2,len(row)):
 				edge_popup[u][v] += '<b>%s</b>: %s<br>' % (header[i],row[i])
-			edge_popup[u][v] += '----------------<br>'
+			edge_popup[u][v] += '------<br>'
 			if len(nodes) > 300 or len(edges) > 500:
 				print('Truncating rankings!')
 				title+= '(first %d nodes and %d edges)' % (len(nodes),len(edges))
@@ -129,8 +129,18 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 			G.add_edge(u,v,popup=edge_popup[u][v])
 			G.add_edge_style(u,v,width=width,color=color)
 		else:
-			G.add_edge(u,v,directed=True,popup=edge_popup[u][v])
-			G.add_edge_style(u,v,directed=True,width=width,color=color)
+			if (v,u) in edges:
+				if (v,u) in added_edges: # already added - skip.
+					continue
+				else: # add bidirected edge. Right now this looks like an undirected edge.
+					## get other popup too
+					bidirected_popup = 'Bidirected Edge<br>----------------<br><br>' + edge_popup[u][v] + '<br>' + edge_popup[v][u]
+					G.add_edge(u,v,popup=bidirected_popup)
+					G.add_edge_style(u,v,width=width,color=color)
+					added_edges.add((u,v))
+			else: ## uni-directed edge. Add.
+				G.add_edge(u,v,directed=True,popup=edge_popup[u][v])
+				G.add_edge_style(u,v,directed=True,width=width,color=color)
 	graph = post(G,graphspace,gs_group)
 	if verbose:
 		print('posted graph "%s" and shared with group "%s"' % (title,gs_group))

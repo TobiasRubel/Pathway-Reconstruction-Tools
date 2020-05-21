@@ -679,7 +679,7 @@ def main(argv):
     if args.post_graphs[0] != None:
         # runs this serially.
         username,password = args.post_graphs
-        is_draft=True
+        IS_DRAFT=False
         for p in PATHWAYS:
             print(p)
             for m in METHODS:
@@ -689,7 +689,7 @@ def main(argv):
                 directory = get_outdir(algorithm,INTERACTOME,p,args.k)
                 #print(username,password,name,directory,draft)
                 RUN = '../Misc/visualize_networks/post_graphspace_graph.py'
-                CALL = 'python3 {} {} {} {} {} {}'.format(RUN,username,password,name,directory,is_draft)
+                CALL = 'python3 {} {} {} {} {} {}'.format(RUN,username,password,name,directory,IS_DRAFT)
                 print(CALL)
                 subprocess.call(CALL.split())
 

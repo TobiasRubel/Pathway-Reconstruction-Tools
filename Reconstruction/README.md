@@ -46,19 +46,20 @@ python3 main.py --node_pr -p Wnt
 python3 ../Validation/PR/plot_pr.py ../Validation/PR/data ../../../plots PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000
 ```
 
-Final file is here:
+Final files are here:
 
 ```
-../../../plots/node-motivation-BowtieBuilder-PathLinker-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.png
+../plots/node-motivation-BowtieBuilder-PCSF-PathLinker-RWR-ResponseNet-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.pdng
+../plots/node-motivation-BowtieBuilder-PCSF-PathLinker-RWR-ResponseNet-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.pdf
 ```
 
 ## 3. Benchmark figures:
 
 Pick PL as input methods for all pathways; plot composite.
 
-### 3a. DFS/BFS and weighted/unweighted (easy to do)
+### 3a. DFS/BFS and weighted/unweighted and PerfectLinker Nodes/Edges (easy to do)
 
-### 3b. varying k in PL (easy to do, take a bit of time run)
+### 3b. varying k in PL & PRAUG(PL) (easy to do, take a bit of time run)
 
 Lets set `k=[50,100,500,1000,5000,10000]`
 
@@ -66,7 +67,21 @@ Lets set `k=[50,100,500,1000,5000,10000]`
 
 Pick pathways of interest (Wnt) & methods of interest.  
 
-## 4. Generating Networks (Anna -- not started)
+## 4. Generating Networks
+
+For any number of pathways and methods, we can generate two networks: (a) the subgraph of predictions, and (b) an induced subgraph of predictions on the ground truth nodes. To post graphs for `HybridLinker` on the `Wnt` pathway, run:
+
+```
+python3 main.py --post_graphs <USERNAME> <PASSWORD> -p Wnt -m run_HybridLinker
+```
+
+where `<USERNAME>` is your [GraphSpace](http://graphspace.org/) username and `<PASSWORD>` is your [GraphSpace](http://graphspace.org/) password.    To run all methods on the Wnt pathway, run: (TOD add BTB-HL)
+
+```
+python3 main.py --post_graphs <USERNAME> <PASSWORD> -p Wnt -m run_RWR run_PCSF run_ResponseNet run_BowtieBuilder run_ShortestPaths run_PathLinker run_HybridLinker run_HybridLinker_SP run_HybridLinker_RN run_HybridLinker_RWR run_HybridLinker_PCSF run_HybridLinker_BTB
+```
+
+When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruction-traversals' GraphSpace group](http://graphspace.org/groups/1268) (membership required).
 
 ## Others?
 
