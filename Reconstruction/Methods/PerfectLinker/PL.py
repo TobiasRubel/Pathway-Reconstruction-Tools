@@ -123,16 +123,19 @@ def src_snk(pathway: nx.DiGraph,labels: pd.DataFrame,verbose=True) -> nx.DiGraph
     return pathway
 
 
-def graph_to_file(G: nx.Graph,variety: str) -> None:
+def graph_to_file(G: nx.Graph,algorithm:str, variety: str) -> None:
     df = pd.DataFrame({'#tail':[x[0] for x in G.edges],'head':[x[1] for x in G.edges],'rank':[x for x in range(1,len(G.edges)+1)]})
-    df.to_csv('{}-PerfectLinker.csv'.format(variety),index=False,sep='\t')
+    df.to_csv('{}-{}-PerfectLinker.csv'.format(algorithm,variety),index=False,sep='\t')
+    print('wrote to {}-{}-PerfectLinker.csv'.format(algorithm,variety))
 
 
 def main(argv):
     kind,interactome,pathway,labeled_nodes = argv[1:5]
     print('preprocessing inputs...')
     interactome = df_to_graph(interactome)
+    algorithm = pathway.split('/')[-2].split('_')[0] ## get algorithm name from predictions
     pathway = df_to_graph(pathway,weighted=False)
+
     labeled_nodes = pd.read_csv(labeled_nodes,sep='\t')
     #add source and sink nodes to graph
     interactome = src_snk(interactome,labeled_nodes)
@@ -141,7 +144,7 @@ def main(argv):
     print('making prediction...')
     prediction = perfect_linker_dfs('SRC',interactome,pathway,kind)
     print('saving prediction...')
-    graph_to_file(prediction,kind)
+    graph_to_file(prediction,algorithm,kind)
 
 if __name__=="__main__":
     main(sys.argv)

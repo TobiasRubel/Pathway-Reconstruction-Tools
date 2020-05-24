@@ -84,17 +84,28 @@ def report(algorithm:str, interactome: str, pathway:str, args:argparse.Namespace
     df['pathway_name'] = [pathway for x in df.index]
     df.to_csv(edest,sep='\t',index=False)
 
+    # relative links need to be three more levels deep (to be reference from Validation submodule)
+    prefix = '../../../'
     #exceptions occur when the symlink already exists
     groundfile = os.path.join(DATA_PATH,'{}-edges.txt'.format(pathway))
     if not os.path.isfile(os.path.join(DEST,'ground.csv')):
-        os.symlink(groundfile,os.path.join(DEST,'ground.csv'))
+        if not os.path.isfile(groundfile):
+            sys.exit("ERROR: ground truth edges file doesn't exist:",groundfile)
+        #print('SYMLINK',groundfile,os.path.join(DEST,'ground.csv'))
+        os.symlink(prefix+groundfile,os.path.join(DEST,'ground.csv'))
 
     pathway_nodes = groundfile.replace('-edges','-nodes')
     if not os.path.isfile(os.path.join(DEST,'ground-nodes.csv')):
-        os.symlink(pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
+        if not os.path.isfile(pathway_nodes):
+            sys.exit("ERROR: ground truth nodes file doesn't exist:",pathway_nodes)
+        #print('SYMLINK:',pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
+        os.symlink(prefix+pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
 
     if not os.path.isfile(os.path.join(DEST,'interactome.csv')):
-        os.symlink(interactome,os.path.join(DEST,'interactome.csv'))
+        if not os.path.isfile(interactome):
+            sys.exit("ERROR: interactome doesn't exist:",interactome)
+        #print('SYMLINK:',interactome,os.path.join(DEST,'interactome.csv'))
+        os.symlink(prefix+interactome,os.path.join(DEST,'interactome.csv'))
 
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
@@ -307,6 +318,8 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
         run_RWR(interactome,pathway,labeled_nodes,args)
     elif algorithm == 'SP':
         run_ShortestPaths(interactome,pathway,labeled_nodes,args)
+    else:
+        sys.exit('ERROR: algorithm "%s" is not implemented.' % (algorithm))
     predictions = os.path.join(get_outdir(algorithm,interactome,pathway,args),'ranked-edges.csv')
 
     #set up what we need to execute
@@ -317,7 +330,7 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
     if not args.printonly:
         subprocess.call(CALL.split())
         ## replace the outfile name with PL.csv (TODO this hsould happen in the method)
-        os.replace('nodes-PerfectLinker.csv','{}.csv'.format(method_name))
+        os.replace('{}-nodes-PerfectLinker.csv'.format(algorithm),'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
 
 def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
@@ -568,28 +581,50 @@ def main(argv):
     #####
     ## Compute Precision/Recall
     if args.pr:
-        sys.exit('NOT REFACTORED')
-        pr_all()
+        RUN = '../Validation/PR/make_pr.py'
+        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
+        if args.runpraug:
+            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
+
+        print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+        for p in PATHWAYS:
+            print('p: {}'.format(p))
+            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
+            print('runs: {}'.format(runs))
+            CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
 
     #####
     ## Compute Node Precision/Recall
     if args.node_pr:
-        sys.exit('NOT REFACTORED')
+        sys.exit('ERROR: not refactored.\n')
         pr_node_motivation(PATHWAYS)
 
     #####
     ## Plot PR Curves
     if args.plot:
-        sys.exit('NOT REFACTORED')
-        plot_all()
+        RUN = '../Validation/PR/plot_pr.py'
+        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
+        if args.runpraug:
+            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
+        print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+        for p in PATHWAYS:
+            print('p: {}'.format(p))
+            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
+            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
 
     #####
     ## Post GraphSpace Graphs
     if args.gs:
-        sys.exit('NOT REFACTORED')
+        print('WARNING: not refactored.\n')
         # runs this serially.
         username,password = args.post_graphs
-        IS_DRAFT=False
+        IS_DRAFT=True
         for p in PATHWAYS:
             print(p)
             for m in METHODS:
@@ -616,7 +651,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
 
     group = parser.add_argument_group('Actions')
     group.add_argument("--run",action="store_true",help='Run original pathway reconstruction methods on -p and -m arguments.')
-    group.add_argument("--runpraug",action="store_true",help='Run PRAUG-augmented pathway reconstruction methods on -p and -m arguments.')
+    group.add_argument("--runpraug",action="store_true",help='Run PRAUG-augmented pathway reconstruction methods on -p and -m arguments. PRAUG will also be included in PR and plotting.')
     group.add_argument("--pr",action="store_true",help="Compute Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--plot",action="store_true",help="Plot Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--post_graphs",nargs=2,metavar='STR',default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
@@ -653,6 +688,8 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
         PATHWAYS = ALL_PATHWAYS
     else:
         PATHWAYS = args.pathways
+        if any([p not in ALL_PATHWAYS for p in PATHWAYS]):
+            sys.exit('\nERROR: Pathways can be "all" or from {}'.format(ALL_PATHWAYS))
 
     ## check that at least one method is specified
     ## (note this is OK if node_pr is True)
@@ -663,6 +700,9 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
         METHODS = ALL_METHODS
     else:
         METHODS = args.methods
+        if any([m not in ALL_METHODS for m in METHODS]):
+            sys.exit('\nERROR: Methods can be "all" or from {}'.format(ALL_METHODS))
+
 
     ## check that specified arguments are actually run. If not emit a warning.
     if args.k != 500 and not ('run_PathLinker' in METHODS or 'run_HybridLinker' in METHODS):
