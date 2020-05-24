@@ -134,7 +134,7 @@ def main(argv):
 	prediction = run(interactome, sources, sinks, alpha=alpha, thres=thres, verbose=verbose)
 
 	print('saving prediction...')
-	write_output(prediction,'rwr_alpha{}_thres{}.csv'.format(alpha,thres),verbose=verbose)
+	write_output(prediction,'RWR.csv',verbose=verbose)
 
 	return
 

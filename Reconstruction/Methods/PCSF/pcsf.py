@@ -146,7 +146,7 @@ def main(argv):
     sources = set(sources)
     sinks = set(sinks)
 
-    outprefix = 'pcsf-w%d-b%d-g%d-p%d' % (int(dummy_edge_weight),int(edge_reliability),int(degree_penalty),int(prize))
+    outprefix = 'PCSF'
     print('making prediction...')
     forest = run(interactome,sources,sinks,outprefix, \
     	dummy_edge_weight=dummy_edge_weight, \

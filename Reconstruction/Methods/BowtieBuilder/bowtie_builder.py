@@ -16,7 +16,7 @@ def run(G, sources, targets, verbose):
             print('pre-processing',s)
         ## https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.shortest_paths.generic.shortest_path_length.html#networkx.algorithms.shortest_paths.generic.shortest_path_length
         shortest_path_lens[s] = nx.shortest_path_length(G,s,weight='cost')
-        
+
     ## The quotes describing the steps are from the paper by Supper et al.
 
     ## "1. Initialize the pathway P with all nodes S \cap T..." (** should be \cup **)
@@ -24,7 +24,7 @@ def run(G, sources, targets, verbose):
     P.add_nodes_from(sources) ## Add sourcse to P
     P.add_nodes_from(targets) ## Add targets to P
 
-  
+
     ## "1 cont'd ...and flag all nodes in S \cap T as 'not visited'." (** should be \cup **)
     visited = set()
     not_visited = all_sources_targets
@@ -33,7 +33,7 @@ def run(G, sources, targets, verbose):
     ##  nodes in S and T with Dijkstra's algorithm."
     ## Note: this is negative log-transformed, so D is calculating the log of the objective function.
     best = get_best_pair(shortest_path_lens, sources, targets, visited, not_visited)
-    
+
     ## "6. Repeat the steps 2-5 until every node in S is connected
     ##  to some node in T, and vice versa if such a path exists in G."
     i = 1
@@ -42,7 +42,7 @@ def run(G, sources, targets, verbose):
             print(' Iteration %d: %d nodes visited and %d nodes not_visited' % (i,len(visited),len(not_visited)))
 
         ## "3. Select the shortest path in D that connects a 'not visited'
-        ##  and a 'visited' node in P, or, if no such path exists, a 'not 
+        ##  and a 'visited' node in P, or, if no such path exists, a 'not
         ##  visited' node in S to a 'not visited' node in T."
         if best == None:
             if verbose:
@@ -60,11 +60,11 @@ def run(G, sources, targets, verbose):
         ##  "4 cont'd.  ...flag all nodes in the pathway as 'visited'."
         visited = visited.union(set(path))
         not_visited = all_sources_targets.difference(visited)
-        
+
         ## "5. Update D to include all distances to the nodes in P^D(s,t)"
         new_sources = sources.union(P).difference(targets)
         new_targets = targets.union(P).difference(sources)
-        
+
         ## update the shortest_path_lens dictionary with the new nodes.
         for s in new_sources.difference(shortest_path_lens.keys()):
             #if verbose:
@@ -77,7 +77,7 @@ def run(G, sources, targets, verbose):
         if verbose:
             print(' best:',best)
 
-        ## "6. Repeat the steps 2–5 until every node in S is connected to some node in T, 
+        ## "6. Repeat the steps 2–5 until every node in S is connected to some node in T,
         ## and vice versa if such a path exists in G."
         i +=1
 
@@ -90,7 +90,7 @@ def run(G, sources, targets, verbose):
 ##
 ## Requirements: shortests_paths contains all sources.
 def get_best_pair(shortest_path_lens, sources, targets, visited, not_visited):
-    best_one_visited = (None,None,1000000) ## best (s,t,dist) tuple if one is visited 
+    best_one_visited = (None,None,1000000) ## best (s,t,dist) tuple if one is visited
     best_neither_visited = (None,None,1000000) ## best (s,t,dist) tuple if neither is visited
     for s in sources:
         for t in targets:
@@ -187,7 +187,7 @@ def main(argv):
     G = run(interactome, sources, sinks, verbose=verbose)
 
     print('saving prediction...')
-    write_output(G,'bowtie_builder.csv',verbose=verbose)
+    write_output(G,'BTB.csv',verbose=verbose)
 
     return
 

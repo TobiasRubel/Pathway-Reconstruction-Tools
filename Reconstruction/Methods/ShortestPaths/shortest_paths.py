@@ -96,7 +96,7 @@ def main(argv):
 	prediction = run(interactome, sources, sinks, verbose=verbose)
 
 	print('saving prediction...')
-	write_output(prediction,'shortest_paths.csv',verbose=verbose)
+	write_output(prediction,'SP.csv',verbose=verbose)
 
 	return
 

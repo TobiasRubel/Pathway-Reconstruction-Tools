@@ -87,3 +87,9 @@ When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruc
 
 ### Prediction overlaps (venn or heatmap)
 ### subset composte on small/med pathways
+
+# Example Runs (for debuging/refactoring)
+
+```
+ python3 main.py --run -m run_PathLinker run_HybridLinker -k 50 -p TCR --force --printonly
+ ```

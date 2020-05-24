@@ -6,7 +6,7 @@
 # reconstruction. It is just DFS which leverages pathway information.
 #
 # It is a choice-point as to whether we demand that edges are part
-# of paths which connect sources to sinks. I think there will have to 
+# of paths which connect sources to sinks. I think there will have to
 # be two methods which do it.
 #
 #
@@ -89,7 +89,7 @@ def perfect_linker_dfs(v,G: nx.DiGraph,ground: nx.DiGraph,variety='nodes',verbos
                     ret.add_edge(x,n)
                     discovered.add((x,n))
                     S.put(n)
-    
+
 
     print('got {} out of {}'.format(len(discovered),len(ground.edges)))
     return ret
@@ -97,8 +97,8 @@ def perfect_linker_dfs(v,G: nx.DiGraph,ground: nx.DiGraph,variety='nodes',verbos
 def src_snk(pathway: nx.DiGraph,labels: pd.DataFrame,verbose=True) -> nx.DiGraph:
     """
     :pathway graph
-    :labels  dataframe of labels 
-    :returns graph with source and sink added 
+    :labels  dataframe of labels
+    :returns graph with source and sink added
     """
     pathway.add_node('SRC')
     pathway.add_node('SNK')
@@ -124,7 +124,7 @@ def src_snk(pathway: nx.DiGraph,labels: pd.DataFrame,verbose=True) -> nx.DiGraph
 
 
 def graph_to_file(G: nx.Graph,variety: str) -> None:
-    df = pd.DataFrame({'#tail':[x[0] for x in G.edges],'head':[x[1] for x in G.edges],'KSP index':[x for x in range(1,len(G.edges)+1)]})
+    df = pd.DataFrame({'#tail':[x[0] for x in G.edges],'head':[x[1] for x in G.edges],'rank':[x for x in range(1,len(G.edges)+1)]})
     df.to_csv('{}-PerfectLinker.csv'.format(variety),index=False,sep='\t')
 
 
@@ -145,12 +145,3 @@ def main(argv):
 
 if __name__=="__main__":
     main(sys.argv)
-
-    
-
-
-
-                
-
-             
- 
