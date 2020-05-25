@@ -91,5 +91,13 @@ When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruc
 # Example Runs (for debuging/refactoring)
 
 ```
-  python3 main.py --run -k 50 -p TCR --runpraug -m all
+time nohup python3 main.py --run --runpraug --pr --plot -p all -m all 
  ```
+
+ On my mac, saving to external SSD, the above command (with no pre-processed experiments) filled up 681M and took  
+
+ ```
+real	90m0.324s
+user	220m55.093s
+sys	7m33.662s
+```

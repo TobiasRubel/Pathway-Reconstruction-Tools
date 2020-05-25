@@ -30,7 +30,9 @@ from multiprocessing import Process
 #should be placed here
 #DEST_PATH = '/home/tobias/Documents/Work/CompBio/PR/2018_interactome-data'
 
-DEST_PATH = '../Validation/PR/data'
+#DEST_PATH = '../Validation/PR/data'
+DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
+
 #for each pathway, plots are to be deposited here.
 #PLOT_PATH = '../Validation/PR/plots'
 PLOT_PATH = '../plots'
@@ -70,6 +72,7 @@ def report(algorithm:str, interactome: str, pathway:str, args:argparse.Namespace
     global DEST_PATH,EXAMPLE_CONFIG
     #make directory
     DEST = get_outdir(algorithm, interactome, pathway,args)
+    DEST = os.path.abspath(DEST) ## to avoid relative path errors
     if not os.path.isdir(DEST):
         os.mkdir(DEST)
 
@@ -77,7 +80,7 @@ def report(algorithm:str, interactome: str, pathway:str, args:argparse.Namespace
     #print([x for x in os.listdir('.') if prediction in x])
     pred = '{}.csv'.format(algorithm)
     edest = os.path.join(DEST,'ranked-edges.csv')
-    os.replace(pred,edest)
+    shutil.move(pred,edest)
 
     #put pathway name in prediction file
     df = pd.read_csv(edest,sep='\t')
@@ -85,27 +88,29 @@ def report(algorithm:str, interactome: str, pathway:str, args:argparse.Namespace
     df.to_csv(edest,sep='\t',index=False)
 
     # relative links need to be three more levels deep (to be reference from Validation submodule)
-    prefix = '../../../'
     #exceptions occur when the symlink already exists
     groundfile = os.path.join(DATA_PATH,'{}-edges.txt'.format(pathway))
+    groundfile = os.path.abspath(groundfile) ## to avoid relative path errors
     if not os.path.isfile(os.path.join(DEST,'ground.csv')):
         if not os.path.isfile(groundfile):
             sys.exit("ERROR: ground truth edges file doesn't exist:",groundfile)
         #print('SYMLINK',groundfile,os.path.join(DEST,'ground.csv'))
-        os.symlink(prefix+groundfile,os.path.join(DEST,'ground.csv'))
+        os.symlink(groundfile,os.path.join(DEST,'ground.csv'))
 
     pathway_nodes = groundfile.replace('-edges','-nodes')
+    pathway_nodes = os.path.abspath(pathway_nodes) ## to avoid relative path errors
     if not os.path.isfile(os.path.join(DEST,'ground-nodes.csv')):
         if not os.path.isfile(pathway_nodes):
             sys.exit("ERROR: ground truth nodes file doesn't exist:",pathway_nodes)
         #print('SYMLINK:',pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
-        os.symlink(prefix+pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
+        os.symlink(pathway_nodes,os.path.join(DEST,'ground-nodes.csv'))
 
+    interactome = os.path.abspath(interactome) ## to avoid relative path errors
     if not os.path.isfile(os.path.join(DEST,'interactome.csv')):
         if not os.path.isfile(interactome):
             sys.exit("ERROR: interactome doesn't exist:",interactome)
         #print('SYMLINK:',interactome,os.path.join(DEST,'interactome.csv'))
-        os.symlink(prefix+interactome,os.path.join(DEST,'interactome.csv'))
+        os.symlink(interactome,os.path.join(DEST,'interactome.csv'))
 
     shutil.copy(EXAMPLE_CONFIG,os.path.join(DEST,'config.conf'))
 
@@ -289,7 +294,7 @@ def run_PathLinker(interactome:str, pathway:str, labeled_nodes:str, args:argpars
     if not args.printonly:
         subprocess.call(CALL.split()) # call function
         ## replace the outfile name with PL.csv
-        os.replace('PLk-{}-ranked-edges.txt'.format(args.k),'{}.csv'.format(method_name))
+        shutil.move('PLk-{}-ranked-edges.txt'.format(args.k),'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
 
 def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
@@ -330,7 +335,7 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
     if not args.printonly:
         subprocess.call(CALL.split())
         ## replace the outfile name with PL.csv (TODO this hsould happen in the method)
-        os.replace('{}-nodes-PerfectLinker.csv'.format(algorithm),'{}.csv'.format(method_name))
+        shutil.move('{}-nodes-PerfectLinker.csv'.format(algorithm),'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
 
 def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
