@@ -85,16 +85,16 @@ def main(argv):
     #do first run
     print(os.getcwd())
     os.chdir('Methods/RWR')
-    network,sources,alpha, = argv[1],argv[2],argv[3]
+    network,sources,alpha,thresh = argv[1],argv[2],argv[3],argv[4]
     #we need to modify network,pathway paths
     network = os.path.join('../../',network)
     sources = os.path.join('../../',sources)
-    argv = ['python3','rwr.py']+[network,sources,alpha,'False']
+    argv = ['python3','rwr.py']+[network,sources,alpha,thresh,'False']
     print(argv)
     subprocess.call(argv)
     #generate new interactome
     print(os.listdir('.'))
-    pedges = next(x for x in os.listdir('.') if 'rwr_q{}'.format(alpha) in x)
+    pedges = next(x for x in os.listdir('.') if 'rwr_alpha{}_thres{}'.format(alpha,thresh) in x)
     V = gen_vertices(pedges)
     G = df_to_graph(network) 
     H = gen_graph(V,G,k=0)

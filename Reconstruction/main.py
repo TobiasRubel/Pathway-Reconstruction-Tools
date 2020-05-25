@@ -443,8 +443,10 @@ def run_HybridLinker_RWR(interactome:str,labeled_nodes:str,pathway:str,k: int,fo
 
     #set up what we need to execute
     RUN = 'Methods/RWR/HL.py'
-    alpha = 0.85
-    CALL = 'python3 {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha)
+    alpha = 0.85 ## FIX THIS FOR NOW -- this needs to change.
+    thres = 0.50 ## default parameter now - predicted edes should capture this percentage of flux.
+    verbose = 'True'
+    CALL = 'python3 {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,alpha,thres,verbose)
     #execute script
     subprocess.call(CALL.split())
     report('HybridLinker-RWR','HybridLinker-RWR',interactome,labeled_nodes,pathway,k)
@@ -586,7 +588,7 @@ def pr_all():
         print('runs: {}'.format(runs))
         CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
         print(CALL)
-        #subprocess.call(CALL.split())
+        subprocess.call(CALL.split())
     #os.chdir(hdir)
 
 
