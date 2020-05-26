@@ -43,7 +43,7 @@ python3 main.py --node_pr -p Wnt
 3. Plot the methods. Set `COMPOSITE=False` and `NODE_MOTIVATION=True` in `plot_pr.py` and then run:
 
 ```
-python3 ../Validation/PR/plot_pr.py ../Validation/PR/data ../../../plots PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000
+python3 main.py --plot -p Wnt -m all
 ```
 
 Final files are here:
@@ -59,9 +59,22 @@ Pick PL as input methods for all pathways; plot composite.
 
 ### 3a. DFS/BFS and weighted/unweighted and PerfectLinker Nodes/Edges (easy to do)
 
+```
+python3 main.py --benchmark -p Wnt -m run_PathLinker
+python3 main.py --benchmark -p all -m run_RWR
+```
 ### 3b. varying k in PL & PRAUG(PL) (easy to do, take a bit of time run)
 
 Lets set `k=[50,100,500,1000,5000,10000]`
+```
+python3 main.py -p Wnt --pl_sweep
+```
+
+### 3d. varying tau in RWR and PRAUG-RWR.
+
+```
+python3 main.py -p Wnt --rwr_sweep
+```
 
 ### 3c. make variance plots (nearly done)
 
