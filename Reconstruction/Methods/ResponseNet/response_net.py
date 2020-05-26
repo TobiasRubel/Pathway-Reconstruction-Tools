@@ -1,7 +1,7 @@
 ## ResponseNet implementation
-## 
-## From the paper: "Briding High-Throughput Genetic and Transcriptional 
-## Data Reveals Cellular Reponses to Alpha-Synuclein Toxicity" 
+##
+## From the paper: "Briding High-Throughput Genetic and Transcriptional
+## Data Reveals Cellular Reponses to Alpha-Synuclein Toxicity"
 ## Yege-Lotem et. al., Nat. Genetics 2009
 ## https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2733244/
 ##
@@ -53,7 +53,7 @@ def run(G, sources, targets, gamma, lp_outfile, verbose=False):
         else:
             weights_w.append(G[u][v]['cost'])
     m.objective = minimize(xsum(weights_w[i]*values_x[i] for i in range(len(values_x))))
-   
+
     ## First Constraint: Flow from Sources to Sinks must be balanced
     print('\n---- Setting Source/Sink Flow Constraints')
     ## variables are all SUPERSOURCE-source flow variables and all target-SUPERSINK flow variables.
@@ -61,7 +61,7 @@ def run(G, sources, targets, gamma, lp_outfile, verbose=False):
     ## coefficients are +1 for SUPERSOURCE-source edges and -1 for target-SUPERSINK edges.
     coeff = [1.0]*len(sources) + [-1.0]*len(targets)
     m += xsum(coeff[i]*variables[i] for i in range(len(variables))) == 0
-    
+
     ## Next Constraints: Flow in = Flow out
     print('\n---- Setting Balance Constraints')
     for n in G.nodes():
@@ -72,7 +72,7 @@ def run(G, sources, targets, gamma, lp_outfile, verbose=False):
         variables = [G[n][j]['flow_var_ref'] for j in G.successors(n)] + [G[j][n]['flow_var_ref'] for j in G.predecessors(n)]
         ## coefficients are +1 for SUCCESSORS of n and -1 for PREDECESSORS of n.
         coeff = [1.0]*G.out_degree(n) + [-1.0]*G.in_degree(n)
-        m += xsum(coeff[i]*variables[i] for i in range(len(variables))) == 0           
+        m += xsum(coeff[i]*variables[i] for i in range(len(variables))) == 0
 
     ## write file
     m.write(lp_outfile)
@@ -118,9 +118,9 @@ def augment_graph(G,sources,targets,verbose):
     ## (2) Add dir. edges from supersource to receptors and tfs to supersink
 
     ## (2a) Add capacities to edges from supersource to receptors
-        
+
     ## NOTE: capacities are uniform for both of these types of edges.
-    ## The original paper changed this to the strength of 
+    ## The original paper changed this to the strength of
     ## each genetic hit.  PathLinker used uniform capcities.
 
     for s in sources:
@@ -215,17 +215,13 @@ def main(argv):
     sources = set(sources)
     sinks = set(sinks)
 
-    outprefix = 'response_net_gamma_%.2f' % (gamma)
     print('making prediction...')
-    G = run(interactome, sources, sinks, gamma, '%s.lp' % (outprefix), verbose=verbose)
+    G = run(interactome, sources, sinks, gamma, 'RN.lp', verbose=verbose)
 
     print('saving prediction...')
-    write_output(G, '%s.csv' % (outprefix),verbose=verbose)
+    write_output(G, 'RN.csv',verbose=verbose)
 
     return
 
 if __name__ == '__main__':
     main(sys.argv)
-
-
-

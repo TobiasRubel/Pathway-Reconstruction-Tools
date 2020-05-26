@@ -3,3 +3,5 @@ numpy
 graphspace_python
 mip
 pandas
+urllib
+ssl
