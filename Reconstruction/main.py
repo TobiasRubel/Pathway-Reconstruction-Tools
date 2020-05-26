@@ -470,72 +470,6 @@ def fetch_arguments(pathways,args):
         arguments.append([INTERACTOME,pname,nodefile,args])
     return arguments
 
-def pr_all():
-    print('COMPUTING PR FOR METHODS')
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    #hdir = os.listdir('.')
-    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
-    #os.chdir(ndir)
-    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
-    pathway_names.remove('')
-    print(pathway_names)
-    RUN = '../Validation/PR/make_pr.py'
-    for p in pathway_names:
-        print('p: {}'.format(p))
-        runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
-        print('runs: {}'.format(runs))
-        CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
-        print(CALL)
-        #subprocess.call(CALL.split())
-    #os.chdir(hdir)
-
-
-def pr_node_motivation(pathway_names):
-    print('COMPUTING PR FOR NODE MOTIVATION')
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    #hdir = os.listdir('.')
-    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
-    #os.chdir(ndir)
-    print(pathway_names)
-    methods = ['ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',
-        'RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']
-    RUN = '../Validation/PR/make_node_motivation_pr.py'
-    for p in pathway_names:
-        print('p: {}'.format(p))
-        runs = " ".join(methods)
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
-        print(CALL)
-        subprocess.call(CALL.split())
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,True,runs)
-        print(CALL)
-        subprocess.call(CALL.split())
-        print()
-
-    #os.chdir(hdir)
-
-def plot_all():
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    ## need to check if '-'
-    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH) if '-' in x])
-    print('pathwaynames:',pathway_names)
-    RUN = '../Validation/PR/plot_pr.py'
-
-    for p in pathway_names:
-        runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
-        print('CALL: {}'.format(CALL))
-        subprocess.call(CALL.split())
-
 def main(argv):
     global INTERACTOME, INTERACTOMES
 
@@ -593,19 +527,13 @@ def main(argv):
 
         print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
-            print('p: {}'.format(p))
+            print('precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
             print('runs: {}'.format(runs))
             CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
             print(CALL)
             if not args.printonly:
                 subprocess.call(CALL.split())
-
-    #####
-    ## Compute Node Precision/Recall
-    if args.node_pr:
-        sys.exit('ERROR: not refactored.\n')
-        pr_node_motivation(PATHWAYS)
 
     #####
     ## Plot PR Curves
@@ -616,7 +544,7 @@ def main(argv):
             ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
         print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
-            print('p: {}'.format(p))
+            print('plotting precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
             CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
             print(CALL)
@@ -643,6 +571,34 @@ def main(argv):
                 print(CALL)
                 subprocess.call(CALL.split())
 
+    ### SPECIAL ACTIONS
+    #####
+    ## Compute Node Precision/Recall (Motivation figure)
+    if args.node_pr:
+        if METHODS != ALL_METHODS:
+            print('WARNING: Running node motivation pr code for all methods, not -m methods.')
+        all_methods = [METHOD_ABBREVIATIONS[m] for m in ALL_METHODS]
+
+        RUN = '../Validation/PR/make_node_motivation_pr.py'
+        for p in PATHWAYS:
+            print('node motivation: {}'.format(p))
+            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in all_methods])
+            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+
+            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,True,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+                print()
+
+    #####
+    ## Compute RWR parameter sweep fig        
+    if args.rwr_sweep:
+
+
 # argument parser
 def parse_args(ALL_PATHWAYS,ALL_METHODS):
     parser = argparse.ArgumentParser()
@@ -660,7 +616,10 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     group.add_argument("--pr",action="store_true",help="Compute Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--plot",action="store_true",help="Plot Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--post_graphs",nargs=2,metavar='STR',default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
+
+    group = parser.add_argument_group('Specialized Actions')
     group.add_argument("--node_pr",action="store_true",help='Plot node motivation precision/recall (which is a little different than the typical PR).')
+    group.add_argument('--rwr_sweep',action="store_true",help='Generate and plot parameter sweep for RWR based on based on -p arguments (ignores any -m)')
 
     group = parser.add_argument_group('Pathway Reconstruction Method Arguments')
     group.add_argument('-k',type=int,metavar='INT',default=500,help="PathLinker: number of shortest paths (k). Default 500.")
@@ -675,7 +634,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     args = parser.parse_args()
 
     ## check that at least one action is specified
-    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr):
+    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr or args.rwr_sweep):
         parser.print_help()
         sys.exit('\nERROR: At least one action must be specified. Exiting.')
 
@@ -698,11 +657,15 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
 
     ## check that at least one method is specified
     ## (note this is OK if node_pr is True)
-    if args.methods == None and not args.node_pr:
+    if args.methods == None and not (args.node_pr or args.rwr_sweep):
         parser.print_help()
         sys.exit('\nERROR: At least one method (-m) must be specified. Exiting.')
     elif args.methods == ['all']:
         METHODS = ALL_METHODS
+    elif args.methods == None:
+        if not (args.node_pr or args.rwr_sweep):
+            sys.exit('\nERROR: Method must be specified for any action other than --node_pr and --rwr_sweep. Exiting.')
+        METHODS = None
     else:
         METHODS = args.methods
         if any([m not in ALL_METHODS for m in METHODS]):

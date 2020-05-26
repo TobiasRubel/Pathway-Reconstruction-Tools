@@ -26,7 +26,7 @@ python3 make_pr.py data $(ls data | grep composit)
 python3 plot_pr.py data plots $(ls data | grep composit)
 ```
 
-## 2. Generating the node motivation figure (Anna -- a little broken)
+## 2. Generating the node motivation figure
 
 1. Run the following code to get predictions for the five relevant methods.
 
@@ -90,14 +90,8 @@ When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruc
 
 # Example Runs (for debuging/refactoring)
 
+Anna's runs:
+- Reset `DEST_PATH` to be external harddrive.
 ```
-time nohup python3 main.py --run --runpraug --pr --plot -p all -m all 
+nohup python3 main.py --run --runpraug --pr --plot -p all -m all > /Volumes/compbio/2020-05-PRAUG/runs/2020-05-24.out
  ```
-
- On my mac, saving to external SSD, the above command (with no pre-processed experiments) filled up 681M and took  
-
- ```
-real	90m0.324s
-user	220m55.093s
-sys	7m33.662s
-```
