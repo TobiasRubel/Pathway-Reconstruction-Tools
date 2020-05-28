@@ -470,7 +470,7 @@ def main(argv):
 
     #####
     ## Get all methods for computing precisioin and recall and/or plotting.
-    if args.pr or args.plt:
+    if args.pr or args.plot:
         ORIG_AND_AUG_METHODS = []
         if args.run:
             ORIG_AND_AUG_METHODS += [METHOD_ABBREVIATIONS[m] for m in METHODS]
