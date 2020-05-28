@@ -316,8 +316,8 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
         method_name = 'PRAUG-{}-BFS'.format(algorithm)
     if weighted:
         method_name +='-WEIGHTED'
-    if edges == True:
-        method_name += '-EDGES_AS_INPUT'
+    ## Note: assuming that if edges=True then the algorithm name reflects this (e.g. PRAUG-GT-EDGES)
+
     #print('DFS:',DFS,'WEIGHTED:',weighted,'EDGES',edges,'--> METHOD NAME',method_name)
     if not args.force and outfile_exists(method_name, interactome,pathway,args):
         DEST = get_outdir(method_name,interactome,pathway,args)
@@ -337,9 +337,15 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
         run_RWR(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'SP':
         run_ShortestPaths(interactome,pathway,labeled_nodes,args,subcall=True)
+    elif algorithm == 'GT-NODES' or algorithm == 'GT-EDGES':
+        predictions = labeled_nodes.replace('-nodes.txt','-edges.txt')
     else:
         sys.exit('ERROR: algorithm "%s" is not implemented.' % (algorithm))
-    predictions = os.path.join(get_outdir(algorithm,interactome,pathway,args),'ranked-edges.csv')
+
+    ## ground-truth nodes and edges already set the prediction file; for all others,
+    ## get the ranked-edges.csv file.
+    if algorithm != 'GT-NODES' and algorithm != 'GT-EDGES':
+        predictions = os.path.join(get_outdir(algorithm,interactome,pathway,args),'ranked-edges.csv')
 
     #set up what we need to execute
     ## TODO: change name of PerfectLinker/PL.py to PRAUG
@@ -351,10 +357,16 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
 
     ## VARIANTS is a dictionary of dictionary: VARIANTS[DFS][weighted] willreturn a tuple of (run,outfile).
     VARIANTS = {True:{True:None,False:None},False:{True:None,False:None}}
-    VARIANTS[True][True] = ('Methods/PerfectLinker-DFS-Weighted/PL.py','{}-{}-PerfectLinker-DFS-Weighted.csv'.format(algorithm,run_type))
-    VARIANTS[True][False] = ('Methods/PerfectLinker/PL.py','{}-{}-PerfectLinker.csv'.format(algorithm,run_type))
-    VARIANTS[False][True] = ('Methods/PerfectLinker-BFS-Weighted/PL.py','{}-{}-PerfectLinker-BFS-Weighted.csv'.format(algorithm,run_type))
-    VARIANTS[False][False] = ('Methods/PerfectLinker-BFS/PL.py','{}-{}-PerfectLinker-BFS.csv'.format(algorithm,run_type))
+    if algorithm != 'GT-NODES' and algorithm != 'GT-EDGES':
+        VARIANTS[True][True] = ('Methods/PerfectLinker-DFS-Weighted/PL.py','{}-{}-PerfectLinker-DFS-Weighted.csv'.format(algorithm,run_type))
+        VARIANTS[True][False] = ('Methods/PerfectLinker/PL.py','{}-{}-PerfectLinker.csv'.format(algorithm,run_type))
+        VARIANTS[False][True] = ('Methods/PerfectLinker-BFS-Weighted/PL.py','{}-{}-PerfectLinker-BFS-Weighted.csv'.format(algorithm,run_type))
+        VARIANTS[False][False] = ('Methods/PerfectLinker-BFS/PL.py','{}-{}-PerfectLinker-BFS.csv'.format(algorithm,run_type))
+    else: # outfile changes for ground truth runs.
+        VARIANTS[True][True] = ('Methods/PerfectLinker-DFS-Weighted/PL.py','Pathways-{}-PerfectLinker-DFS-Weighted.csv'.format(run_type))
+        VARIANTS[True][False] = ('Methods/PerfectLinker/PL.py','Pathways-{}-PerfectLinker.csv'.format(run_type))
+        VARIANTS[False][True] = ('Methods/PerfectLinker-BFS-Weighted/PL.py','Pathways-{}-PerfectLinker-BFS-Weighted.csv'.format(run_type))
+        VARIANTS[False][False] = ('Methods/PerfectLinker-BFS/PL.py','Pathways-{}-PerfectLinker-BFS.csv'.format(run_type))
     RUN,outfile = VARIANTS[DFS][weighted]
 
     CALL = 'python3 {} {} {} {} {}'.format(RUN,run_type,interactome,predictions,labeled_nodes)
@@ -414,12 +426,13 @@ def main(argv):
 
     #####
     ## Run Pathway Reconstruction Methods
-    if args.run or args.runpraug:
+    if args.run or args.runpraug or args.upper_bounds:
         method_inputs = fetch_arguments(PATHWAYS, args)
 
         ## TODO: split up theses dependencies by writing directly to the output directory.
-        ## then, you only need to call the original methods BEFORE the PRAUG methods.
-        if args.run: ## run originl methods first.
+        ## only run the original methods if --run is specified but NOT --runpraug.
+        ## If --runpraug is specified, then the original methods will be re-run as a sub-call.
+        if args.run and not args.runpraug: ## run originl methods first.
             for arg in method_inputs:
                 print('Running {} methods on pathway {}'.format(len(METHODS),arg[1]))
                 lat = []
@@ -442,14 +455,34 @@ def main(argv):
                 for l in lat:
                     l.join()
 
+        if args.upper_bounds: ## run PRAUG-GT-Nodes and PRAUG-GT-Edges last.
+            for arg in method_inputs:
+                print('Running PRAUG Ground Truth methods on pathway {}'.format(arg[1]))
+                lat = []
+                proc = Process(target=eval('PRAUG'), args=(['GT-NODES'] + arg))
+                proc.start()
+                lat.append(proc)
+                proc = Process(target=eval('PRAUG'), args=(['GT-EDGES'] + arg + [True,False,True]))
+                proc.start()
+                lat.append(proc)
+                for l in lat:
+                    l.join()
+
+    #####
+    ## Get all methods for computing precisioin and recall and/or plotting.
+    if args.pr or args.plt:
+        ORIG_AND_AUG_METHODS = []
+        if args.run:
+            ORIG_AND_AUG_METHODS += [METHOD_ABBREVIATIONS[m] for m in METHODS]
+        if args.runpraug:
+            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
+        if args.upper_bounds:
+            ORIG_AND_AUG_METHODS += ['PRAUG-GT-NODES','PRAUG-GT-EDGES']
+
     #####
     ## Compute Precision/Recall
     if args.pr:
         RUN = '../Validation/PR/make_pr.py'
-        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug:
-            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
-
         print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
             print('precision/recall: {}'.format(p))
@@ -464,9 +497,6 @@ def main(argv):
     ## Plot PR Curves
     if args.plot:
         RUN = '../Validation/PR/plot_pr.py'
-        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug:
-            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
         print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
             print('plotting precision/recall: {}'.format(p))
@@ -559,7 +589,7 @@ def main(argv):
     ## Compute PL parameter sweep fig
     if args.pl_sweep:
         orig_k = args.k
-        possible_ks = [50,100,500,1000,5000,10000]
+        possible_ks = [50,100,500,1000,5000]
 
         method_inputs = fetch_arguments(PATHWAYS, args)
         ## run PRAUG-RWR on each pathway
@@ -613,32 +643,33 @@ def main(argv):
 
         ## compute precision/recall
         RUN = '../Validation/PR/make_pr.py'
-        abbrvs = [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        benchmark_methods = [a for a in abbrvs]
-        benchmark_methods += ['PRAUG-{}'.format(a) for a in abbrvs]
-        benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
-        benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
-        benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
-        print('benchmark compute pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
-        for p in PATHWAYS:
-            print('making precision/recall: {}'.format(p))
-            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
-            print(' runs:',runs)
-            CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
-            print(CALL)
-            if not args.printonly:
-                subprocess.call(CALL.split())
+        for m in METHODS:
+            abbrvs = [METHOD_ABBREVIATIONS[m]]
+            benchmark_methods = [a for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
+            print('benchmark compute pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            for p in PATHWAYS:
+                print('making precision/recall: {}'.format(p))
+                runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
+                print(' runs:',runs)
+                CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
+                print(CALL)
+                if not args.printonly:
+                    subprocess.call(CALL.split())
 
-        ## plot precision/recall
-        RUN = '../Validation/PR/plot_pr.py'
-        print('benchmark plot pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
-        for p in PATHWAYS:
-            print('plotting precision/recall: {}'.format(p))
-            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
-            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
-            print(CALL)
-            if not args.printonly:
-                subprocess.call(CALL.split())
+            ## plot precision/recall
+            RUN = '../Validation/PR/plot_pr.py'
+            print('benchmark plot pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            for p in PATHWAYS:
+                print('plotting precision/recall: {}'.format(p))
+                runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
+                CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
+                print(CALL)
+                if not args.printonly:
+                    subprocess.call(CALL.split())
 
 
 # argument parser
@@ -655,6 +686,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     group = parser.add_argument_group('Actions')
     group.add_argument("--run",action="store_true",help='Run original pathway reconstruction methods on -p and -m arguments.')
     group.add_argument("--runpraug",action="store_true",help='Run PRAUG-augmented pathway reconstruction methods on -p and -m arguments. PRAUG will also be included in PR and plotting.')
+    group.add_argument("--upper_bounds",action="store_true",help='Include PRAUG_GT_Nodes and PRAUG_GT_Edges (GT: "ground truth"); formerly PerfectLinker-Nodes and PerfectLinker edges.')
     group.add_argument("--pr",action="store_true",help="Compute Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--plot",action="store_true",help="Plot Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--post_graphs",nargs=2,metavar='STR',default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
