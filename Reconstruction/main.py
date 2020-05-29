@@ -645,8 +645,8 @@ def main(argv):
         RUN = '../Validation/PR/make_pr.py'
         for m in METHODS:
             abbrvs = [METHOD_ABBREVIATIONS[m]]
-            benchmark_methods = [a for a in abbrvs]
-            benchmark_methods += ['PRAUG-{}'.format(a) for a in abbrvs]
+            #benchmark_methods = [a for a in abbrvs]
+            benchmark_methods = ['PRAUG-{}'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
