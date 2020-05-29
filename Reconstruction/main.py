@@ -30,12 +30,13 @@ from multiprocessing import Process
 #should be placed here
 #DEST_PATH = '/home/tobias/Documents/Work/CompBio/PR/2018_interactome-data'
 
-#DEST_PATH = '../Validation/PR/data'
-DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
+DEST_PATH = '../Validation/PR/refactor-test-data'
+#DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
 
 #for each pathway, plots are to be deposited here.
 #PLOT_PATH = '../Validation/PR/plots'
-PLOT_PATH = '../plots'
+#PLOT_PATH = '../plots'
+PLOT_PATH = 'plots'
 #all input data is placed here...
 DATA_PATH = '../Pathways'
 
