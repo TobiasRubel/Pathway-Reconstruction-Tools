@@ -76,6 +76,7 @@ def report(algorithm:str, interactome: str, pathway:str, args:argparse.Namespace
     DEST = os.path.abspath(DEST) ## to avoid relative path errors
     if not os.path.isdir(DEST):
         os.mkdir(DEST)
+    print('report function: writing to DEST',DEST)
 
     #populate directory (make sure it's a csv file)
     #print([x for x in os.listdir('.') if prediction in x])
@@ -122,13 +123,13 @@ def outfile_exists(algorithm:str, interactome: str, pathway:str,args:argparse.Na
     return os.path.isfile(edge_dest)
 
 def format_args(algorithm,args):
-    if algorithm == 'PL' or algorithm == 'PRAUG-PL':
+    if 'PL' in algorithm:
         return 'k{}'.format(args.k)
-    elif algorithm == 'RN' or algorithm == 'PRAUG-RN':
+    elif 'RN' in algorithm:
         return 'y{}'.format(args.y)
-    elif algorithm == 'PCSF' or algorithm == 'PRAUG-PCSF':
+    elif 'PCSF' in algorithm:
         return 'r{}-b{}-w{}-g{}'.format(args.r,args.b,args.w,args.g)
-    elif algorithm == 'RWR' or algorithm == 'PRAUG-RWR':
+    elif 'RWR' in algorithm:
         return 'a{}-t{}'.format(args.a,args.t)
     else: # algorithm has no arguments. Return empty string
         return ''
@@ -155,7 +156,7 @@ def get_outdir(algorithm:str, interactome: str, pathway:str, args:argparse.Names
 
 
 ## TODO: this makes an intermediate (.lp) file.  Where should these live?
-def run_RWR(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_RWR(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -165,7 +166,7 @@ def run_RWR(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Names
     :side-effect   makes a dest directory with predicted pathway
     """
     method_name = METHOD_ABBREVIATIONS['run_RWR']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -180,7 +181,7 @@ def run_RWR(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Names
 
 ## TODO: this makes intermediate files.
 ## TODO: THIS IS AN UNDIRECTED GRAPH and thus the edges may be undirected.
-def run_PCSF(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_PCSF(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -190,7 +191,7 @@ def run_PCSF(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Name
     :side-effect   makes a dest directory with predicted pathway
     """
     method_name = METHOD_ABBREVIATIONS['run_PCSF']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -204,7 +205,7 @@ def run_PCSF(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Name
         report(method_name,interactome,pathway,args)
 
 ## TODO: this makes an intermediate (.lp) file.  Where should these live?
-def run_ResponseNet(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_ResponseNet(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -214,7 +215,7 @@ def run_ResponseNet(interactome:str, pathway:str, labeled_nodes:str, args:argpar
     :side-effect   makes a dest directory with predicted pathway
     """
     method_name = METHOD_ABBREVIATIONS['run_ResponseNet']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -227,7 +228,7 @@ def run_ResponseNet(interactome:str, pathway:str, labeled_nodes:str, args:argpar
         subprocess.call(CALL.split())
         report(method_name,interactome,pathway,args)
 
-def run_BowtieBuilder(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_BowtieBuilder(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -237,7 +238,7 @@ def run_BowtieBuilder(interactome:str, pathway:str, labeled_nodes:str, args:argp
     :side-effect   makes a dest directory with predicted pathway
     """
     method_name = METHOD_ABBREVIATIONS['run_BowtieBuilder']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -250,7 +251,7 @@ def run_BowtieBuilder(interactome:str, pathway:str, labeled_nodes:str, args:argp
         subprocess.call(CALL.split())
         report(method_name,interactome,pathway,args)
 
-def run_ShortestPaths(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_ShortestPaths(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -260,7 +261,7 @@ def run_ShortestPaths(interactome:str, pathway:str, labeled_nodes:str, args:argp
     :side-effect   makes a dest directory with predicted pathway
     """
     method_name = METHOD_ABBREVIATIONS['run_ShortestPaths']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -273,7 +274,7 @@ def run_ShortestPaths(interactome:str, pathway:str, labeled_nodes:str, args:argp
         subprocess.call(CALL.split())
         report(method_name,interactome,pathway,args)
 
-def run_PathLinker(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+def run_PathLinker(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -284,7 +285,7 @@ def run_PathLinker(interactome:str, pathway:str, labeled_nodes:str, args:argpars
     """
 
     method_name = METHOD_ABBREVIATIONS['run_PathLinker']
-    if not args.force and outfile_exists(method_name, interactome,pathway,args):
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
         print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
         return
 
@@ -298,7 +299,9 @@ def run_PathLinker(interactome:str, pathway:str, labeled_nodes:str, args:argpars
         shutil.move('PLk-{}-ranked-edges.txt'.format(args.k),'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
 
-def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace) -> None:
+## TODO: Lost PerfectLinker (ground truth).  Add another option for algorithm here??
+## TODO: right now DFS/weighted/edges are optional arguments - is there a better way to do this?
+def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace,DFS=True,weighted=False,edges=False) -> None:
     """
     :interactome   path/to/interactome
     :labeled_nodes path/to/source and dest node file
@@ -307,144 +310,74 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
     :returns       nothing
     :side-effect   makes a dest directory with predicted pathway
     """
-    method_name = 'PRAUG-{}'.format(algorithm)
+
+    if DFS:
+        method_name = 'PRAUG-{}'.format(algorithm)
+    else:
+        method_name = 'PRAUG-{}-BFS'.format(algorithm)
+    if weighted:
+        method_name +='-WEIGHTED'
+    ## Note: assuming that if edges=True then the algorithm name reflects this (e.g. PRAUG-GT-EDGES)
+
+    #print('DFS:',DFS,'WEIGHTED:',weighted,'EDGES',edges,'--> METHOD NAME',method_name)
     if not args.force and outfile_exists(method_name, interactome,pathway,args):
-        print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
+        DEST = get_outdir(method_name,interactome,pathway,args)
+        edge_dest = os.path.join(DEST,'ranked-edges.csv')
+        print('{} Outfile Exists: {}\n\tNot overwriting: use --force to overwrite.'.format(method_name,edge_dest))
         return
 
     if algorithm == 'PL':
-        run_PathLinker(interactome,pathway,labeled_nodes,args)
+        run_PathLinker(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'BTB':
-        run_BowtieBuilder(interactome,pathway,labeled_nodes,args)
+        run_BowtieBuilder(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'RN':
-        run_ResponseNet(interactome,pathway,labeled_nodes,args)
+        run_ResponseNet(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'PCSF':
-        run_PCSF(interactome,pathway,labeled_nodes,args)
+        run_PCSF(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'RWR':
-        run_RWR(interactome,pathway,labeled_nodes,args)
+        run_RWR(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'SP':
-        run_ShortestPaths(interactome,pathway,labeled_nodes,args)
+        run_ShortestPaths(interactome,pathway,labeled_nodes,args,subcall=True)
+    elif algorithm == 'GT-NODES' or algorithm == 'GT-EDGES':
+        predictions = labeled_nodes.replace('-nodes.txt','-edges.txt')
     else:
         sys.exit('ERROR: algorithm "%s" is not implemented.' % (algorithm))
-    predictions = os.path.join(get_outdir(algorithm,interactome,pathway,args),'ranked-edges.csv')
+
+    ## ground-truth nodes and edges already set the prediction file; for all others,
+    ## get the ranked-edges.csv file.
+    if algorithm != 'GT-NODES' and algorithm != 'GT-EDGES':
+        predictions = os.path.join(get_outdir(algorithm,interactome,pathway,args),'ranked-edges.csv')
 
     #set up what we need to execute
     ## TODO: change name of PerfectLinker/PL.py to PRAUG
-    RUN = 'Methods/PerfectLinker/PL.py'
-    CALL = 'python3 {} nodes {} {} {}'.format(RUN,interactome,predictions,labeled_nodes)
+
+    if edges:
+        run_type = 'edges'
+    else:
+        run_type = 'nodes'
+
+    ## VARIANTS is a dictionary of dictionary: VARIANTS[DFS][weighted] willreturn a tuple of (run,outfile).
+    VARIANTS = {True:{True:None,False:None},False:{True:None,False:None}}
+    if algorithm != 'GT-NODES' and algorithm != 'GT-EDGES':
+        VARIANTS[True][True] = ('Methods/PerfectLinker-DFS-Weighted/PL.py','{}-{}-PerfectLinker-DFS-Weighted.csv'.format(algorithm,run_type))
+        VARIANTS[True][False] = ('Methods/PerfectLinker/PL.py','{}-{}-PerfectLinker.csv'.format(algorithm,run_type))
+        VARIANTS[False][True] = ('Methods/PerfectLinker-BFS-Weighted/PL.py','{}-{}-PerfectLinker-BFS-Weighted.csv'.format(algorithm,run_type))
+        VARIANTS[False][False] = ('Methods/PerfectLinker-BFS/PL.py','{}-{}-PerfectLinker-BFS.csv'.format(algorithm,run_type))
+    else: # outfile changes for ground truth runs.
+        VARIANTS[True][True] = ('Methods/PerfectLinker-DFS-Weighted/PL.py','Pathways-{}-PerfectLinker-DFS-Weighted.csv'.format(run_type))
+        VARIANTS[True][False] = ('Methods/PerfectLinker/PL.py','Pathways-{}-PerfectLinker.csv'.format(run_type))
+        VARIANTS[False][True] = ('Methods/PerfectLinker-BFS-Weighted/PL.py','Pathways-{}-PerfectLinker-BFS-Weighted.csv'.format(run_type))
+        VARIANTS[False][False] = ('Methods/PerfectLinker-BFS/PL.py','Pathways-{}-PerfectLinker-BFS.csv'.format(run_type))
+    RUN,outfile = VARIANTS[DFS][weighted]
+
+    CALL = 'python3 {} {} {} {} {}'.format(RUN,run_type,interactome,predictions,labeled_nodes)
     print(CALL)
     if not args.printonly:
         subprocess.call(CALL.split())
         ## replace the outfile name with PL.csv (TODO this hsould happen in the method)
-        shutil.move('{}-nodes-PerfectLinker.csv'.format(algorithm),'{}.csv'.format(method_name))
+        shutil.move(outfile,'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
-
-def run_PerfectLinker_edges(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-
-    if not force and outfile_exists('PerfectLinker-edges', 'edges-PerfectLinker',interactome,labeled_nodes,pathway,k):
-        print('PerfectLinker-edges Outfile Exists. Not overwriting: use --force to overwrite.')
-        return
-
-    #set up what we need to execute
-    RUN = 'Methods/PerfectLinker/PL.py'
-    CALL = 'python3 {} edges {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
-    print('*'*20)
-    print(CALL)
-    #execute script
-    subprocess.call(CALL.split())
-    report('PerfectLinker-edges','edges-PerfectLinker',interactome,labeled_nodes,pathway,k)
-
-def run_PerfectLinker_nodes(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-
-    if not force and outfile_exists('PerfectLinker-nodes', 'nodes-PerfectLinker',interactome,labeled_nodes,pathway,k):
-        print('PerfectLinker-nodes Outfile Exists. Not overwriting: use --force to overwrite.')
-        return
-
-    #set up what we need to execute
-    RUN = 'Methods/PerfectLinker/PL.py'
-    CALL = 'python3 {} nodes {} {} {}'.format(RUN,interactome,pathway,labeled_nodes)
-    #execute script
-    subprocess.call(CALL.split())
-    report('PerfectLinker-nodes','nodes-PerfectLinker',interactome,labeled_nodes,pathway,k)
-
-def run_HybridLinker_BFS(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-
-    if not force and outfile_exists('HybridLinker-BFS', 'HybridLinker-BFS',interactome,labeled_nodes,pathway,k):
-        print('HybridLinker-BFS Outfile Exists. Not overwriting: use --force to overwrite.')
-        return
-
-    #set up what we need to execute
-    RUN = 'Methods/HybridLinker-BFS/main.py'
-    CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
-    #execute script
-    subprocess.call(CALL.split())
-    report('HybridLinker-BFS','HybridLinker-BFS',interactome,labeled_nodes,pathway,k)
-
-def run_HybridLinker_BFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-
-    if not force and outfile_exists('HybridLinker-BFS-Weighted', 'HybridLinker-BFS-Weighted',interactome,labeled_nodes,pathway,k):
-        print('HybridLinker-BFS-Weighted Outfile Exists. Not overwriting: use --force to overwrite.')
-        return
-
-    #set up what we need to execute
-    RUN = 'Methods/HybridLinker-BFS-Weighted/main.py'
-    CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
-    #execute script
-    subprocess.call(CALL.split())
-    report('HybridLinker-BFS-Weighted','HybridLinker-BFS-Weighted',interactome,labeled_nodes,pathway,k)
-
-def run_HybridLinker_DFS_Weighted(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-    if not force and outfile_exists('HybridLinker-DFS-Weighted', 'HybridLinker-DFS-Weighted',interactome,labeled_nodes,pathway,k):
-        print('HybridLinker-DFS-Weighted Outfile Exists. Not overwriting: use --force to overwrite.')
-        return
-
-    #set up what we need to execute
-    RUN = 'Methods/HybridLinker-DFS-Weighted/main.py'
-    CALL = 'python3 {} 500 {} {} {}'.format(RUN,interactome,labeled_nodes,pathway)
-    #execute script
-    subprocess.call(CALL.split())
-    report('HybridLinker-DFS-Weighted','HybridLinker-DFS-Weighted',interactome,labeled_nodes,pathway,k)
-
+'''
 def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
     """
     :interactome   path/to/interactome
@@ -462,6 +395,7 @@ def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k:
         print(CALL)
         subprocess.call(CALL.split())
         report('HybridLinker-{}'.format(i),'HybridLinker',interactome,labeled_nodes,pathway,k)
+'''
 
 def fetch_arguments(pathways,args):
     global DATA_PATH, INTERACTOME
@@ -470,72 +404,6 @@ def fetch_arguments(pathways,args):
         nodefile = os.path.join(DATA_PATH,'{}-nodes.txt'.format(pname))
         arguments.append([INTERACTOME,pname,nodefile,args])
     return arguments
-
-def pr_all():
-    print('COMPUTING PR FOR METHODS')
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    #hdir = os.listdir('.')
-    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
-    #os.chdir(ndir)
-    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH)])
-    pathway_names.remove('')
-    print(pathway_names)
-    RUN = '../Validation/PR/make_pr.py'
-    for p in pathway_names:
-        print('p: {}'.format(p))
-        runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
-        print('runs: {}'.format(runs))
-        CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
-        print(CALL)
-        #subprocess.call(CALL.split())
-    #os.chdir(hdir)
-
-
-def pr_node_motivation(pathway_names):
-    print('COMPUTING PR FOR NODE MOTIVATION')
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    #hdir = os.listdir('.')
-    #ndir = '/home/tobias/Documents/Work/CompBio/PR'
-    #os.chdir(ndir)
-    print(pathway_names)
-    methods = ['ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',\
-        'ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000',
-        'RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000']
-    RUN = '../Validation/PR/make_node_motivation_pr.py'
-    for p in pathway_names:
-        print('p: {}'.format(p))
-        runs = " ".join(methods)
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
-        print(CALL)
-        subprocess.call(CALL.split())
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,True,runs)
-        print(CALL)
-        subprocess.call(CALL.split())
-        print()
-
-    #os.chdir(hdir)
-
-def plot_all():
-    global DATA_PATH
-    global PLOT_PATH
-    global DEST_PATH
-    ## need to check if '-'
-    pathway_names = set(['-'.join(x.split('-')[:-1]) for x in os.listdir(DATA_PATH) if '-' in x])
-    print('pathwaynames:',pathway_names)
-    RUN = '../Validation/PR/plot_pr.py'
-
-    for p in pathway_names:
-        runs = " ".join([x for x in os.listdir(DEST_PATH) if p in x])
-        CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
-        print('CALL: {}'.format(CALL))
-        subprocess.call(CALL.split())
 
 def main(argv):
     global INTERACTOME, INTERACTOMES
@@ -547,6 +415,9 @@ def main(argv):
 
     ## PATHWAYS directory includes allNPnodes.txt and NP_pathways.zip; make sure that '-' is in the variable.
     ALL_PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if '-' in x and not 'all' in x}
+    ALL_PATHWAYS.remove('ID')
+    ALL_PATHWAYS.remove('RAGE')
+    ALL_PATHWAYS.remove('IL11')
 
     ## parse arguments
     args,PATHWAYS,METHODS = parse_args(ALL_PATHWAYS,ALL_METHODS)
@@ -556,12 +427,13 @@ def main(argv):
 
     #####
     ## Run Pathway Reconstruction Methods
-    if args.run or args.runpraug:
+    if args.run or args.runpraug or args.upper_bounds:
         method_inputs = fetch_arguments(PATHWAYS, args)
 
         ## TODO: split up theses dependencies by writing directly to the output directory.
-        ## then, you only need to call the original methods BEFORE the PRAUG methods.
-        if args.run: ## run originl methods first.
+        ## only run the original methods if --run is specified but NOT --runpraug.
+        ## If --runpraug is specified, then the original methods will be re-run as a sub-call.
+        if args.run and not args.runpraug: ## run originl methods first.
             for arg in method_inputs:
                 print('Running {} methods on pathway {}'.format(len(METHODS),arg[1]))
                 lat = []
@@ -584,17 +456,37 @@ def main(argv):
                 for l in lat:
                     l.join()
 
+        if args.upper_bounds: ## run PRAUG-GT-Nodes and PRAUG-GT-Edges last.
+            for arg in method_inputs:
+                print('Running PRAUG Ground Truth methods on pathway {}'.format(arg[1]))
+                lat = []
+                proc = Process(target=eval('PRAUG'), args=(['GT-NODES'] + arg))
+                proc.start()
+                lat.append(proc)
+                proc = Process(target=eval('PRAUG'), args=(['GT-EDGES'] + arg + [True,False,True]))
+                proc.start()
+                lat.append(proc)
+                for l in lat:
+                    l.join()
+
+    #####
+    ## Get all methods for computing precisioin and recall and/or plotting.
+    if args.pr or args.plot:
+        ORIG_AND_AUG_METHODS = []
+        if args.run:
+            ORIG_AND_AUG_METHODS += [METHOD_ABBREVIATIONS[m] for m in METHODS]
+        if args.runpraug:
+            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
+        if args.upper_bounds:
+            ORIG_AND_AUG_METHODS += ['PRAUG-GT-NODES','PRAUG-GT-EDGES']
+
     #####
     ## Compute Precision/Recall
     if args.pr:
         RUN = '../Validation/PR/make_pr.py'
-        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug:
-            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
-
         print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
-            print('p: {}'.format(p))
+            print('precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
             print('runs: {}'.format(runs))
             CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
@@ -603,21 +495,12 @@ def main(argv):
                 subprocess.call(CALL.split())
 
     #####
-    ## Compute Node Precision/Recall
-    if args.node_pr:
-        sys.exit('ERROR: not refactored.\n')
-        pr_node_motivation(PATHWAYS)
-
-    #####
     ## Plot PR Curves
     if args.plot:
         RUN = '../Validation/PR/plot_pr.py'
-        ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug:
-            ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
         print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
         for p in PATHWAYS:
-            print('p: {}'.format(p))
+            print('plotting precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
             CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
             print(CALL)
@@ -628,7 +511,6 @@ def main(argv):
     ## Post GraphSpace Graphs
     if args.gs:
         print('WARNING: not refactored.\n')
-        # runs this serially.
         username,password = args.post_graphs
         IS_DRAFT=True
         for p in PATHWAYS:
@@ -644,12 +526,159 @@ def main(argv):
                 print(CALL)
                 subprocess.call(CALL.split())
 
+    ### SPECIAL ACTIONS
+    #####
+    ## Compute Node Precision/Recall (Motivation figure)
+    if args.node_pr:
+        if METHODS != ALL_METHODS:
+            print('WARNING: Running node motivation pr code for all methods, not -m methods.')
+        all_methods = [METHOD_ABBREVIATIONS[m] for m in ALL_METHODS]
+        RUN = '../Validation/PR/make_node_motivation_pr.py'
+        for p in PATHWAYS:
+            print('node motivation: {}'.format(p))
+            runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in all_methods])
+            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+
+            CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,True,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+                print()
+
+    #####
+    ## Compute RWR parameter sweep fig
+    if args.rwr_sweep:
+        orig_tau = args.t
+        possible_taus = [0.1,0.2,0.3,0.4,0.5,0.75]
+
+        method_inputs = fetch_arguments(PATHWAYS, args)
+        ## run PRAUG-RWR on each pathway
+        for tau in possible_taus:
+            args.t = tau
+            for arg in method_inputs:
+                print('RWR parameter sweep: {}'.format(arg[1]))
+                ## running PRAUG will also run RWR if not already populated.
+                PRAUG('RWR',*arg)
+
+        ## compute precision/recall
+        RUN = '../Validation/PR/make_pr.py'
+        PLOT_RUN = '../Validation/PR/plot_pr.py'
+        for p in PATHWAYS:
+            print('RWR parameter sweep precision/recall: {}'.format(p))
+            rwr_run = []
+            for tau in possible_taus:
+                args.t = tau
+                rwr_run.append(get_outdir('PRAUG-RWR',INTERACTOME,p,args).split('/')[-1])
+                if tau == possible_taus[-1]: # only plot the last RWR run (all previous ones are on top of each other).
+                    rwr_run.append(get_outdir('RWR',INTERACTOME,p,args).split('/')[-1])
+            runs = ' '.join(rwr_run)
+            print('runs: {}'.format(runs))
+            CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+            CALL = 'python3 {} {} {} {}'.format(PLOT_RUN,DEST_PATH,PLOT_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+        args.t = orig_tau ## reset tau
+
+    #####
+    ## Compute PL parameter sweep fig
+    if args.pl_sweep:
+        orig_k = args.k
+        possible_ks = [50,100,500,1000,5000]
+
+        method_inputs = fetch_arguments(PATHWAYS, args)
+        ## run PRAUG-RWR on each pathway
+        for k in possible_ks:
+            args.k=k
+            for arg in method_inputs:
+                print('PL parameter sweep: {}'.format(arg[1]))
+                ## running PRAUG will also run RWR if not already populated.
+                PRAUG('PL',*arg)
+
+        ## compute precision/recall
+        RUN = '../Validation/PR/make_pr.py'
+        PLOT_RUN = '../Validation/PR/plot_pr.py'
+        for p in PATHWAYS:
+            print('PL parameter sweep precision/recall: {}'.format(p))
+            rwr_run = []
+            for k in possible_ks:
+                args.k=k
+                rwr_run.append(get_outdir('PRAUG-PL',INTERACTOME,p,args).split('/')[-1])
+                if k == possible_ks[-1]: # only plot the last PL run (all previous ones are on top of each other).
+                    rwr_run.append(get_outdir('PL',INTERACTOME,p,args).split('/')[-1])
+            runs = ' '.join(rwr_run)
+            print('runs: {}'.format(runs))
+            CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+            CALL = 'python3 {} {} {} {}'.format(PLOT_RUN,DEST_PATH,PLOT_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
+        args.k = orig_k ## reset tau
+
+    #####
+    ## Compute benchmarks
+    if args.benchmark:
+        ## first run all benchmarks
+        method_inputs = fetch_arguments(PATHWAYS,args)
+        for arg in method_inputs:
+            print('benchmark: {}'.format(arg[1]))
+            lat = []
+            for method in METHODS:
+                abbrv = METHOD_ABBREVIATIONS[method]
+                for DFS in [True,False]:
+                    for WEIGHTED in [True,False]:
+                        proc = Process(target=eval('PRAUG'), args=([abbrv] + arg + [DFS,WEIGHTED]))
+                        proc.start()
+                        lat.append(proc)
+                        for l in lat:
+                            l.join()
+
+        ## compute precision/recall
+        RUN = '../Validation/PR/make_pr.py'
+        for m in METHODS:
+            abbrvs = [METHOD_ABBREVIATIONS[m]]
+            benchmark_methods = [a for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
+            benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
+            print('benchmark compute pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            for p in PATHWAYS:
+                print('making precision/recall: {}'.format(p))
+                runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
+                print(' runs:',runs)
+                CALL = 'python3 {} {} {}'.format(RUN,DEST_PATH,runs)
+                print(CALL)
+                if not args.printonly:
+                    subprocess.call(CALL.split())
+
+            ## plot precision/recall
+            RUN = '../Validation/PR/plot_pr.py'
+            print('benchmark plot pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            for p in PATHWAYS:
+                print('plotting precision/recall: {}'.format(p))
+                runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
+                CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,PLOT_PATH,runs)
+                print(CALL)
+                if not args.printonly:
+                    subprocess.call(CALL.split())
+
+
 # argument parser
 def parse_args(ALL_PATHWAYS,ALL_METHODS):
     parser = argparse.ArgumentParser()
 
     #add optional arguments
-    parser.add_argument("--force",action="store_true",help="Run method even if outfile exists in the correct place. Default False.")
+    parser.add_argument("--force",action="store_true",help="Run method even if outfile exists in the correct place. If --force and --runpraug are specified by --run is NOT specified, will force run PRAUG but won't overwrite original method runs.  Default False.")
     parser.add_argument("--printonly",action="store_true",help="Print the commands but do not run them. Default False.")
     parser.add_argument("-p","--pathways",metavar='STR',nargs="+",help="A list of pathways to make predictions for. Possible options are 'all' or:\n{}".format("\n".join(ALL_PATHWAYS)))
     parser.add_argument("-m","--methods",metavar='STR',nargs="+",help="A list of pathway reconstruction algorithms to run. Possible options are 'all' or:\n{}".format("\n".join(ALL_METHODS)))
@@ -658,10 +687,16 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     group = parser.add_argument_group('Actions')
     group.add_argument("--run",action="store_true",help='Run original pathway reconstruction methods on -p and -m arguments.')
     group.add_argument("--runpraug",action="store_true",help='Run PRAUG-augmented pathway reconstruction methods on -p and -m arguments. PRAUG will also be included in PR and plotting.')
+    group.add_argument("--upper_bounds",action="store_true",help='Include PRAUG_GT_Nodes and PRAUG_GT_Edges (GT: "ground truth"); formerly PerfectLinker-Nodes and PerfectLinker edges.')
     group.add_argument("--pr",action="store_true",help="Compute Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--plot",action="store_true",help="Plot Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--post_graphs",nargs=2,metavar='STR',default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
+
+    group = parser.add_argument_group('Specialized Actions')
     group.add_argument("--node_pr",action="store_true",help='Plot node motivation precision/recall (which is a little different than the typical PR).')
+    group.add_argument('--pl_sweep',action="store_true",help='Generate precision/recall for PL parameter sweep based on -p arguments (ignores any -m)')
+    group.add_argument('--rwr_sweep',action="store_true",help='Generate precision/recall for RWR parameter sweep based on -p arguments (ignores any -m)')
+    group.add_argument('--benchmark',action='store_true',help='Run DFS/BFS/weighted scenarios on methods and parameters.')
 
     group = parser.add_argument_group('Pathway Reconstruction Method Arguments')
     group.add_argument('-k',type=int,metavar='INT',default=500,help="PathLinker: number of shortest paths (k). Default 500.")
@@ -676,7 +711,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     args = parser.parse_args()
 
     ## check that at least one action is specified
-    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr):
+    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr or args.rwr_sweep or args.pl_sweep or args.benchmark):
         parser.print_help()
         sys.exit('\nERROR: At least one action must be specified. Exiting.')
 
@@ -699,11 +734,15 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
 
     ## check that at least one method is specified
     ## (note this is OK if node_pr is True)
-    if args.methods == None and not args.node_pr:
+    if args.methods == None and not (args.node_pr or args.rwr_sweep or args.pl_sweep):
         parser.print_help()
         sys.exit('\nERROR: At least one method (-m) must be specified. Exiting.')
     elif args.methods == ['all']:
         METHODS = ALL_METHODS
+    elif args.methods == None:
+        if not (args.node_pr or args.rwr_sweep or args.pl_sweep):
+            sys.exit('\nERROR: Method must be specified for any action other than --node_pr and --rwr_sweep or --pl_sweep. Exiting.')
+        METHODS = None
     else:
         METHODS = args.methods
         if any([m not in ALL_METHODS for m in METHODS]):
@@ -726,6 +765,16 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
         args.gs = True
     else:
         args.gs = False
+
+    ## add force_subcall method.
+    ## if --runpraug and --force are specified but --run is NOT specified, set force_subcall = False
+    ## For example, when running PRAUG-PL, shoudl PL be --force run or not?
+    if args.runpraug and args.force and not args.run:
+        args.force_subcall = False
+    elif args.force: ## --force specified, so set --force_subcall to be True
+        args.force_subcall = True
+    else: ## --force NOT specified, so set --force_subcall to be False
+        args.force_subcall = False
 
     return args, PATHWAYS, METHODS
 
