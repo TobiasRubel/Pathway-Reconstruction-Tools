@@ -26,7 +26,7 @@ python3 make_pr.py data $(ls data | grep composit)
 python3 plot_pr.py data plots $(ls data | grep composit)
 ```
 
-## 2. Generating the node motivation figure (Anna -- a little broken)
+## 2. Generating the node motivation figure
 
 1. Run the following code to get predictions for the five relevant methods.
 
@@ -43,7 +43,7 @@ python3 main.py --node_pr -p Wnt
 3. Plot the methods. Set `COMPOSITE=False` and `NODE_MOTIVATION=True` in `plot_pr.py` and then run:
 
 ```
-python3 ../Validation/PR/plot_pr.py ../Validation/PR/data ../../../plots PathLinker_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ShortestPaths_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 BowtieBuilder_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 RWR_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 PCSF_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000 ResponseNet_PathLinker_2018_human-ppi-weighted-cap0_75_Wnt_10000
+python3 main.py --plot -p Wnt -m all
 ```
 
 Final files are here:
@@ -59,9 +59,22 @@ Pick PL as input methods for all pathways; plot composite.
 
 ### 3a. DFS/BFS and weighted/unweighted and PerfectLinker Nodes/Edges (easy to do)
 
+```
+python3 main.py --benchmark -p Wnt -m run_PathLinker
+python3 main.py --benchmark -p all -m run_RWR
+```
 ### 3b. varying k in PL & PRAUG(PL) (easy to do, take a bit of time run)
 
 Lets set `k=[50,100,500,1000,5000,10000]`
+```
+python3 main.py -p Wnt --pl_sweep
+```
+
+### 3d. varying tau in RWR and PRAUG-RWR.
+
+```
+python3 main.py -p Wnt --rwr_sweep
+```
 
 ### 3c. make variance plots (nearly done)
 
@@ -90,14 +103,8 @@ When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruc
 
 # Example Runs (for debuging/refactoring)
 
+Anna's runs:
+- Reset `DEST_PATH` to be external harddrive.
 ```
-time nohup python3 main.py --run --runpraug --pr --plot -p all -m all 
+nohup python3 main.py --run --runpraug --pr --plot -p all -m all > /Volumes/compbio/2020-05-PRAUG/runs/2020-05-24.out
  ```
-
- On my mac, saving to external SSD, the above command (with no pre-processed experiments) filled up 681M and took  
-
- ```
-real	90m0.324s
-user	220m55.093s
-sys	7m33.662s
-```
