@@ -1,4 +1,5 @@
 Validation/PR/data
 Validation/PR/plots
 Misc/plotting-edge-weights/NDF.csv
-
+Misc/optimize-negatives/*.csv
+Misc/optimize-negatives/negatives
