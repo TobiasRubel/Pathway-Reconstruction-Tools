@@ -1,0 +1,349 @@
+\documentclass[10pt]{article}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+
+\usepackage{color}
+\usepackage{url}
+\usepackage{amssymb} % for checkmark
+
+\newcommand{\getinteractions}{\texttt{get\_interactions.py} }
+\newcommand{\keggtograph}{\texttt{kegg\_to\_graph.py} }
+\newcommand{\listpathways}{\texttt{list\_pathways.py} }
+\newcommand{\annotatenodes}{\texttt{annotate-nodes.py} }
+\title{CSB Group's KEGG Parser}
+\author{Anna Ritz}
+\date{Last Revised \today}
+
+\begin{document}
+\maketitle
+
+This KEGG Parser consists of two main python scripts. The first script, \getinteractions, gets the KGML file for KEGG pathways, and splits the information contained in the KGML file into tab-delimited files.  The second script, \keggtograph, takes the tab-delimited files and creates edge files that are formatted for various algorithms in the group.
+
+\tableofcontents 
+\clearpage
+
+\section{To Run}
+
+\subsection{Dependencies}
+
+All programs are python scripts (workstation python is version 2.7). The \texttt{minidom} package should come with the python distribution. There are four other modules you must include:
+\begin{itemize}
+\item \texttt{utilsPoirel.py} in SVN at \url{file:///home/murali/svnrepo/src/python/scripts/utilsPoirel.py}.
+\item \texttt{rich\_utils.py} in SVN at \url{file:///home/murali/svnrepo/src/python/scripts/rich_utils.py}.
+\item \texttt{restful\_lib.py} for accessing the KEGG database; see \url{https://code.google.com/p/python-rest-client/}.  Only used for \getinteractions and \listpathways.
+\item \texttt{Interface.py} from CSBDB in SVN at \url{file:///home/murali/svnrepo/src/csbdb/} Check out the entire directory; only used for \keggtograph.
+\end{itemize}
+I suggest storing these files elsewhere and updating the \texttt{\$PYTHONPATH} environment variable to point to their location.
+\subsection{Required Arguments}
+There are four arguments that are required for the KEGG Parser to run.
+\begin{enumerate}
+\item \texttt{-s,--species}: the 3-letter species code from KEGG.  Examples are
+\begin{center}
+\begin{tabular}{l|c}
+\textbf{Species} & \textbf{KEGG Code} \\ \hline
+Human & \texttt{hsa} \\
+Rat & \texttt{rno} \\
+Budding Yeast & \texttt{sce}
+\end{tabular}
+\end{center}
+\item \texttt{-c,--convertKeggIdTo}: the namespace to convert the internal KEGG IDs to.  Options are \texttt{uniprot}, \texttt{ncbi-gi}, \texttt{ncbi-geneid}.
+\item \texttt{-o,--outdir}: output directory for the script.
+\item \texttt{-i,--indir}: In \keggtograph, the input directory is the \emph{output} directory after running \getinteractions.
+\end{enumerate}
+\noindent Additionally, one of the following arguments must be specified.
+\begin{itemize}
+\item \texttt{-p,--pathway}: the KEGG pathway name to run a single pathway. For Wnt, for example, acceptable formats are \texttt{hsa04310},\texttt{04310},\texttt{map04310}.  The \texttt{--species} argument overrides the species in the pathway name (\texttt{rno04310} with \texttt{--species=hsa} will output the human Wnt pathway).
+\item \texttt{-a,--allpathways}: runs all pathways from a file \texttt{<SPECIES>\_PATHWAY\_LIST.txt}, where \texttt{<SPECIES>} is the 3-letter code.   To build this list, the \listpathways script is provided. It takes the 3-letter code of the species to list. To list the pathways for human,\\
+\texttt{python list\_pathways.py hsa > /path/to/data/HSA\_PATHWAY\_LIST.txt}\\
+\noindent In \keggtograph, this argument is followed by the pathway list itself.
+\end{itemize}
+\subsection{Parsing a Single Pathway}
+
+Let \texttt{datadir/} be the directory to store the datasets.  To parse the intracellular Wnt signaling pathway for human, run the following commands.  The outputs are piped to output files (labeled \texttt{*.out}).\\
+
+{\small 
+\noindent \texttt{python get\_interactions.py -s hsa -c uniprot -p hsa04310 -o datadir/hsa > datadir/wnt.out}\\
+\noindent \texttt{python kegg\_to\_graph.py -s hsa -p hsa04310 -c uniprot -i datadir/hsa -o datadir/hsa\_pathways >> datadir/wnt.out}
+}
+
+\subsection{Parsing all Pathways from a Species}
+
+Let \texttt{keggdir/} be the directory to store the KEGG-parsed files and \texttt{graphdir/} be the directory to store the converted graph files.  To parse all intracellular pathways in human, run the following commands.  The outputs are piped to output files (labeled \texttt{*.out}).\\
+
+{\small
+\noindent \texttt{python get\_interactions.py -s hsa -c uniprot -a -o datadir/hsa > datadir/hsa.out}\\
+\noindent \texttt{python list\_pathways.py hsa > datadir/HSA\_PATHWAY\_LIST.txt}\\
+\noindent \texttt{python kegg\_to\_graph.py -s hsa -a datadir/HSA\_PATHWAY\_LIST.txt -c uniprot -i datadir/hsa -o datadir/hsa\_pathways >> datadir/hsa.out}
+}
+
+\section{KEGG Information and Resources}
+
+Here I describe the "condensed" version of the output.  Refer to the KEGG
+Markup Language manual for more details: \url{http://www.kegg.jp/kegg/xml/docs/}
+Refer to the API for information about querying the KEGG database:
+\url{http://www.kegg.jp/kegg/rest/keggapi.html}.  KEGG pathways are stored in KGML files, which is the file type that is parsed in \getinteractions.  For more information, see \url{http://www.kegg.jp/kegg/xml/}.
+
+\subsection{Entry Types}
+
+Each node in a KEGG pathway is called an \emph{entry}, and they have different entry types.  
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Type} & \textbf{Description} \\ \hline
+ortholog        & the node is a KO (ortholog group)\\
+enzyme          & the node is an enzyme\\
+reaction        & the node is a reaction\\
+gene            & the node is a gene product (mostly a protein)\\
+group           & the node is a complex of gene products (mostly a protein complex) \\
+compound        & the node is a chemical compound (including a glycan)\\
+map             & the node is a linked pathway map 
+\end{tabular}
+\end{center}
+
+\subsection{Relation Types}
+
+\emph{Relations} are interactions between:
+\begin{itemize}
+\item Two proteins (gene products)
+\item Two KOs (ortholog groups)
+\item A protein and a compound.
+\end{itemize}
+\noindent There are two types of attributes for relations: \emph{relation type} and \emph{relation subtype}.
+
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Relation Type} & \textbf{Description} \\ \hline
+ECrel     & enzyme-enzyme relation, indicating two enzymes catalyzing successive reaction steps\\
+PPrel     & protein-protein interaction, such as binding and modification\\
+GErel     & gene expression interaction, indicating relation of transcription factor and target gene product\\
+PCrel     & protein-compound interaction\\
+maplink   & link to another map
+\end{tabular}
+
+{\small
+\begin{tabular}{l|ccc|l}
+\textbf{Relation SubType} &\tiny ECrel? & \tiny PPrel? & \tiny GErel? & \textbf{Description} \\ \hline
+compound    & \checkmark & \checkmark & & shared with two successive reactions (ECrel) or intermediate of two \\
+ & & & &  interacting proteins (PPrel)\\
+hidden compound  & \checkmark & & &  shared with two successive reactions but not displayed in the pathway map \\
+activation     & & \checkmark & &    positive effects which may be associated with molecular information below \\
+inhibition     & & \checkmark& &    negative effects which may be associated with molecular information below \\
+expression     & & & \checkmark&    interactions via DNA binding\\
+repression     & & & \checkmark&    interactions via DNA binding\\
+indirect effect & & \checkmark& \checkmark&   indirect effect without molecular details\\
+state change    & & \checkmark& &   state transition\\
+binding/association & & \checkmark& &     association\\
+dissociation        & & \checkmark& &     dissociation\\
+missing interaction  & & \checkmark& \checkmark&    missing interaction due to mutation, etc.\\
+phosphorylation      & & \checkmark& &    molecular event\\
+dephosphorylation    & & \checkmark& &    molecular event\\
+glycosylation        & & \checkmark& &    molecular event\\
+ubiquitination       & & \checkmark& &    molecular event\\
+methylation          & & \checkmark& &    molecular event
+\end{tabular}
+}
+\end{center}
+\noindent \textbf{WARNING:} We have observed that the relation types and subtypes may be inconsistent with the description above.  There are some relations with \emph{no} subtypes, there are some PPrel relations with expression subtype, etc. See \getinteractions for current rules for ignoring relations.
+
+\subsection{Reaction Types}
+
+\emph{Reactions} specify the chemical reaction between a substrate and a product.  Each reaction has a \emph{reaction type} that is either `reversible' or `irreversible,' which determines the bi-directional vs. uni-directional nature of the reaction. Reactions are mostly in metabolic pathways.
+
+\subsection{Namespace Mapping}
+
+Currently, \textbf{the KEGG parser uses the KEGG database for mapping between namespaces.}  This may be changed to use CSBDB at a later time.  The KEGG database is queried using the \texttt{/conv/<namespace>/<species>} construct, where \texttt{<namespace>} is the namespace provided by \texttt{--convertKeggIdTo} option and \texttt{<species>} is the 3-letter identifier.  Note that it is often the case that a single internal KEGG identifier maps to multiple identifiers in another namespace.  These statistics are recorded.
+
+In \keggtograph, we output the Gene Names for each protein by converting the Uniprot ID using the CSBDB python interface, \texttt{Interface.py}.  Gene names are useful for visualizing and interpreting the output. 
+
+\section{From KGML to Tab-Delimited Files: \getinteractions}
+
+\getinteractions~first downloads the KGML file, and then parses it into three tabl-delimited files.  The KGML file and the parsed files are written to the directory specified in \texttt{--outdir}.
+\begin{itemize}
+\item \textbf{Entries File} (\texttt{*-entries.tsv})\\
+This file is a tab-separated file containing information about each entry
+(which is drawn as a node in the KEGG signaling pathway). 
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+EntryID       & KEGG ID \# to reference this entry in the pathway\\
+EntryName(s)  & Internal KEGG names (comma-separated)\\
+Type         & See list above\\
+CommonName(s) & names in the specified namespace.  Names for each entry are comma-separated,\\
+ & names with multiple mappings are pipe-separated (\texttt{|})\\
+URL           & URL for the entry
+\end{tabular}
+\end{center}
+
+\item \textbf{Relations File} (\texttt{*-relations.tsv})\\
+This file is a tab-delimited file containing information about relationships
+between two entries.
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+EntryID1 & KEGG ID of the first entry\\
+EntryID2 & KEGG ID of the second entry\\
+EntryType & See list above\\
+InteractionType & See list above (comma-separated)
+\end{tabular}
+\end{center}
+The elements of InteractionType are sorted for each relation: for example, a relation with both `activation' and `phosphorylation' will be written as `activation,phosphorylation', not `phosphorylation,activation.'
+
+\item \textbf{Reactions File}  (\texttt{*-reactions.tsv})\\
+  This file is a tab-delimited file containing information about chemical
+reactions between a substrate and a product.
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+EntryID        &  KEGG ID \# to reference this reaction in the pathway\\
+EntryName      &  Internal KEGG reaction name\\
+EntryType      &  `reversible' or `irreversible'\\
+SubstrateID    &  Substrate KEGG ID\\
+ProductID      &  Product KEGG ID
+\end{tabular}
+\end{center}
+
+\item \textbf{Groups File}  (\texttt{*-groups.tsv})\\
+  This file is a tab-delimited file containing information about groups
+of entries in the KEGG signaling pathway (a.k.a. complexes).
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+GroupID            &  KEGG Internal group ID\\
+NumEntries         &  Number of entries in the group\\
+EntryIDs           &  Internal KEGG entry IDs for each group member\\
+KeggIDs            &  Internal KEGG entry IDs for each group member\\
+NamespaceMapping   &  Namespace mapped IDs for each group member\\
+\end{tabular}
+\end{center}
+The entries within a group are semi--colon delimited. Within an entity
+of a group, elements are comma delimited. If a pathway does not contain
+a group entry, then no group file is written.
+\end{itemize}
+
+\subsection{Optional Arguments}
+There are three optional arguments.
+\begin{itemize}
+\item \texttt{-u,--convertKeggIdUsingCustomList}: convert kegg id to the id (namespace) in the provided two column tab delimited mapping file.
+\item \texttt{-m,--compounds}: Parse compounds (pubchem id) in addition to genes. \textbf{Required for intercellular signaling pathways.}
+\item \texttt{-l,--logoutput}: Instead of printing to output screen, write it to log file. \textcolor{red}{Richard, what are the naming conventions of this file?'}
+\end{itemize}
+
+\subsection{Formatting and Filtering}
+
+\begin{itemize}
+\item \textbf{Only entries of type `gene' or `group' are kept.}  If \texttt{--compounds} is specified, then entries of type \textbf{`compound'} are also kept. For each entry, there may be multiple elements (labeled as multiple KEGG IDs).  Keep only the KEGG IDs that map to the namespace.  Note that this means that an entry might have fewer elements after mapping, or might be removed alltogether if no elements map to the namespace.
+\item \textbf{Only relations/reactions with both entries in the entry list above are kept.}  A single relation may have multiple relation subtypes; however it only has one edge type.
+\item \textbf{Groups} are converted to relations with relation subtype \textbf{`group-type'}.  This is the only attribute that is added to the original KGML definitions.  Each group is converted to all pairwise relations for the group members.
+\item For each entry, I remove unneccessary whitespace and concatenate lists
+with commas, if applicable.  If labels have a space (e.g. `indirect effect'), the space is replaced by a dash (`indirect-effect'). Missing values are replaced by `None'.
+\item If \texttt{--compounds} is specified, the output file names will have the words \texttt{with-compounds} in the name.  Thus, the output files for runs with and without the \texttt{--compounds} option are maintained.
+\end{itemize}
+
+\section{From Tab-Delimited Files to Graphs: \keggtograph}
+
+\keggtograph currently supports converting the TSV files output from \getinteractions into two different types of graphs.  \emph{Intracellular signaling pathways} involve only proteins, and are used for projects like Chris Poirel's signaling pathway reconstruction, and the Linker pool problems.  \emph{Intercellular signaling pathways} involve both proteins and compounds, and are used for projects like Rich's liver signaling problems.  For each pathway, a single output file is written to the directory specified in \texttt{--outdir}.
+\begin{enumerate}
+\item \textbf{Edges File} (\texttt{*-edges.txt})\\
+This file is a tab-separated file containing information about each edge.  If an edge $(u,v)$ is bidirected, there are two lines in the edges file: one for $(u,v)$ and one for $(v,u)$.
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+Tail & Uniprot ID for tail node \textcolor{red}{Rich: does your script work with different namespaces?}\\
+Head & Uniprot ID for tail node \textcolor{red}{Rich: does your script work with different namespaces?}\\
+TailName & Gene Name for tail node\\
+HeadName & Gene Name for head node\\
+EdgeType & Type of edge; see table above.\\
+EdgeSubType & Edge subtypes; see table above plus `group-entry' for complex (comma-separated).
+\end{tabular}
+\end{center}
+\end{enumerate}
+
+\subsection{Optional Arguments}
+There are 6 optional arguments. \textcolor{red}{Richard, elaborate if necessary.}
+\begin{enumerate}
+\item \texttt{-u,--convertKeggIdUsingCustomList}: Convert kegg id to the id (namespace) in the provided two column tab delimited mapping file.
+\item \texttt{-e,--compoundToEnzyme}: Compound to enzyme acting on it mapping, two column tab delmited mapping file.
+\item \texttt{-g,--enzymeToKeggGene}: Enzyme to kegg entry id of gene forming it mapping, two column tab delmited mapping file
+\item \texttt{-m,--compounds}: Parse compounds (pubchem id) in addition to genes
+\item \texttt{-r,--signalingAndMetabolic}: Parsing specific for Rich's intercellular signaling project. \textbf{Required for intercellular signaling pathways.}
+\item \texttt{-l,--logoutput}: Instead of printing to output screen, write it to log file.
+\end{enumerate}
+
+\subsection{Formatting and Filtering for Intracellular Signaling Pathways}
+
+\begin{enumerate}
+\item For intracellular signaling, no additional optional arguments need to be specified. If \getinteractions was run with and without the \texttt{--compounds} option, the files used will \emph{not} include the compounds.
+\item Ensure that all elements have entry type of `gene'.  The number of entries that are skipped because of this are noted in the output file.  \textbf{There should ideally be 0 skipped entries due to entry type.} In human, 0 pathways have skipped entries.
+\item Ensure that the number of internal KEGG IDs and the number of sets of Uniprot IDs are the same (there are no unmapped KEGG IDs).  \textbf{There should ideally be 0 relations with lists of different lengths}.  IN human, there are 3 pathways with skipped relations due to this reason: `MicroRNAs in cancer',`Ribosome biogenesis in eukaryotes', and `Aminoacyl-tRNA biosynthesis'.
+\item \textbf{Only relations with both entries in the entry list above are kept.} This is the same criteria as in \getinteractions, so this is another sanity check.  In human, two pathways have skipped elements due to this reason: `MicroRNAs in cancer' and `Proteoglycans in cancer' pathway. \textbf{I do not parse the reactions file.}
+\item \textbf{Criteria for Ignoring Relations}: The function \texttt{isIgnoreEdge()} determines whether an edge is ignored given its relation type and subtype. \textbf{If any of the criteria below are true, ignore the relation.} 
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Criteria} & \textbf{Reason} \\ \hline
+RelationType=GErel & currently do not represent TF to target gene links\\
+state-change in RelationSubType & Most state changes are self-loops; a few \\
+ & (e.g. NFKB1/RELA in human) are not.\\
+missing-interaction in RelationSubType & Interaction is missing b/c of mutation, etc.\\
+expression in RelationSubType & expression should only be with GErel proteins; \\
+ & sometimes they are mislabeled as PPrel\\
+No RelationSubTypes & not enough information (about 10 relations in human \\
+ &  have no edge subtype) \\ \hline
+\textbf{Possible Criteria (currently included)} & \textbf{Reason} \\ \hline
+indirect-effect in RelationSubType & no molecular details 
+\end{tabular}
+\end{center}
+\item \textbf{Criteria for Determining Relation Directionality}: If the relation is not ignored, then the directionality must be determined.  The function \texttt{determineEdgeDirection()} does this using the relation subtypes.
+\textbf{The criteria below is ordered: once the relation satisfies a criteria, the relation direction is returned.}
+\begin{center}
+\begin{tabular}{ll|c|l}
+& \textbf{Criteria} & \textbf{Relation Dir} & \textbf{Reason} \\ \hline
+1. & `activation' or `inhibition' in RelationSubType & Directed & Positive or negative effect\\
+2. & `phosphorylation' or `dephosphorylation' or & Directed & Directed molecular events\\
+& `glycosylation' or `ubiquitination' or & \\
+& `methylation' in RelationSubType & & \\
+3. & `indirect-effect' in RelationSubType & Directed & \textcolor{red}{need for KEGG Wnt pathway} \\
+4. & `compound' in RelationSubType & Directed & successive reactions/intermediate \\
+& & & proteins \textcolor{red}{(could consider changing)}\\
+5. & `binding/association' or `dissociation' or & Undirected & Information may flow both ways\\
+ & `group-entry' in RelationSubType  && \\
+\end{tabular}
+\end{center}
+\item \textbf{Only compute edges between the UniprotIDs that have been ``reviewed'' according to UniProtKB.}  This is determined using a function call to CSBDB through the python interface.
+\item \textbf{If there are multiple reviewed UniprotIDs for a single KEGG ID, compute edges for all IDs.} This is potentially one reason for ``edge explosion,'' especially if both entries in the same relation have multiple UniprotIDs. Statistics are output to the console.
+\end{enumerate}
+\subsection{Formatting and Filtering for Intercellular Signaling Pathways}
+
+\textcolor{red}{Richard, fill in.}
+
+\section{Additional Annotations}
+
+\subsection{Annotating Nodes for Signaling Pathway Analysis}
+
+We often need to output a nodes file, in addition to an edge file.  The \keggtograph script only outputs an edges file.  Thus, we have included an \annotatenodes script that takes a directory of edge files (ending in \texttt{*-edges.txt}) and annotates the nodes for each edge file.  The following are \textbf{required} arguments:
+\begin{enumerate}
+\item \texttt{--edgedir}: directory of files that have the suffix \texttt{*-edges.txt}. Only these will be annotated.
+\item \texttt{--tfs}: List of transcription factors (first column contains common/gene names).  
+\item \texttt{--receptors}: List of receptors (first column contains uniprotIDs). These are mapped to common/gene names.
+\item \texttt{--mapfile}: human-gene-map.txt file, where the first column is the common/gene name and the 6th column is the uniprot id.
+\end{enumerate}
+
+It also optionally takes a \texttt{--outdir} directory; this defaults to the directory from which the program was called.  It outputs the following file for every \texttt{*-edges.txt} file:
+\begin{enumerate}
+\item \textbf{Nodes File} (\texttt{*-nodes.txt})\\
+This file is a tab-separated file containing information about each node.  \emph{It has the same prefix as the edges file}, and this is often used in subsequent scripts.  For example, we will have a Wnt-edges.txt file and a Wnt-nodes.txt file if \texttt{--outdir} is specified the same as the \texttt{--edgedir}.
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{Column} & \textbf{Description} \\ \hline
+Node & Uniprot ID for the node\\
+Type & one of `receptor', `tf', or `none'. If it is both a receptor and a tf, then it is labeled as a receptor. \\
+Name & Gene Name for the node
+\end{tabular}
+\end{center}
+\end{enumerate}
+
+\section{Recommended Practices}
+\begin{enumerate}
+\item In general, try to avoid storing the output of the scripts in the same directory as the scripts.  Make a \texttt{data/} directory for storing.
+\item Note the date you ran these scripts, as the KEGG database is constantly being updated.
+\end{enumerate}
+
+
+\end{document}
