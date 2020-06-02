@@ -30,13 +30,13 @@ from multiprocessing import Process
 #should be placed here
 #DEST_PATH = '/home/tobias/Documents/Work/CompBio/PR/2018_interactome-data'
 
-DEST_PATH = '../Validation/PR/refactor-test-data'
-#DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
+#DEST_PATH = '../Validation/PR/refactor-test-data'
+DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
 
 #for each pathway, plots are to be deposited here.
 #PLOT_PATH = '../Validation/PR/plots'
 #PLOT_PATH = '../plots'
-PLOT_PATH = 'plots'
+PLOT_PATH = '../plots'
 #all input data is placed here...
 DATA_PATH = '../Pathways'
 
@@ -471,11 +471,11 @@ def main(argv):
 
     #####
     ## Get all methods for computing precisioin and recall and/or plotting.
-    if args.pr or args.plot:
+    if args.pr or args.plot or args.gs:
         ORIG_AND_AUG_METHODS = []
-        if args.run:
+        if args.run or args.gs:
             ORIG_AND_AUG_METHODS += [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug:
+        if args.runpraug or args.gs:
             ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
         if args.upper_bounds:
             ORIG_AND_AUG_METHODS += ['PRAUG-GT-NODES','PRAUG-GT-EDGES']
@@ -510,16 +510,15 @@ def main(argv):
     #####
     ## Post GraphSpace Graphs
     if args.gs:
-        print('WARNING: not refactored.\n')
         username,password = args.post_graphs
         IS_DRAFT=True
         for p in PATHWAYS:
             print(p)
-            for m in METHODS:
+            for m in ORIG_AND_AUG_METHODS:
                 print('  ',m)
                 algorithm = m.split('_')[-1]
                 name = '%s-%s' % (p,algorithm)
-                directory = get_outdir(algorithm,INTERACTOME,p,args.k)
+                directory = get_outdir(algorithm,INTERACTOME,p,args)
                 #print(username,password,name,directory,draft)
                 RUN = '../Misc/visualize_networks/post_graphspace_graph.py'
                 CALL = 'python3 {} {} {} {} {} {}'.format(RUN,username,password,name,directory,IS_DRAFT)
@@ -646,8 +645,8 @@ def main(argv):
         RUN = '../Validation/PR/make_pr.py'
         for m in METHODS:
             abbrvs = [METHOD_ABBREVIATIONS[m]]
-            benchmark_methods = [a for a in abbrvs]
-            benchmark_methods += ['PRAUG-{}'.format(a) for a in abbrvs]
+            #benchmark_methods = [a for a in abbrvs]
+            benchmark_methods = ['PRAUG-{}'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
@@ -706,7 +705,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     group.add_argument('-w',type=int,metavar='INT',default=5,help="PCSF: dummy edge weight (omega). Default 5.")
     group.add_argument('-g',type=int,metavar='INT',default=3,help="PCSF: degree penalty (g). Default 3.")
     group.add_argument('-a',type=float,metavar='FLOAT',default=0.85,help="RWR: teleportation probability (alpha). Default 0.85.")
-    group.add_argument('-t',type=float,metavar='FLOAT',default=0.5,help="RWR: flux threshold (tau). Default 0.5.")
+    group.add_argument('-t',type=float,metavar='FLOAT',default=0.3,help="RWR: flux threshold (tau). Default 0.3.")
 
     args = parser.parse_args()
 
@@ -756,7 +755,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
         print('WARNING: -y option is specified but RN or PRAUG-RN is not specified.')
     if (args.r != 5 or args.b != 1 or args.w != 5 or args.g != 3) and not ('run_PCSF' in METHODS or 'run_HybridLinker_PCSF' in METHODS):
         print('WARNING: at least one of -r, -b, -w, -g options are specified but PCSF or PRAUG-PCSF are not specified.')
-    if (args.a != 0.85 or args.t != 0.5) and not ('run_RWR' in METHODS or 'run_HybridLinker_RWR' in METHODS):
+    if (args.a != 0.85 or args.t != 0.3) and not ('run_RWR' in METHODS or 'run_HybridLinker_RWR' in METHODS):
         print('WARNING: at least one of -a and -t options are specified but RWR or PRAUG-RWR are not specified.')
     print()
 

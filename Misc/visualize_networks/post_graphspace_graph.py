@@ -15,6 +15,10 @@ from math import log as math_log
 import urllib.parse
 import urllib.request
 
+## for now, hard-coded
+KEGG_LIST = '../KEGG-Pathways/HSA_PATHWAY_LIST.txt'
+KEGG_INTERACTIONS = '../KEGG-Pathways/KEGG_Annotated_Interactions.txt'
+
 ## https://stackoverflow.com/questions/35569042/ssl-certificate-verify-failed-with-python3
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -32,7 +36,7 @@ def post(G,gs,gs_group):
 			gs.share_graph(graph=graph,group_name=gs_group)
 	return graph
 
-def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,title,gs_group,add_times,verbose,undirected=False,pos_only=False):
+def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,title,gs_group,add_times,verbose,kegg_edges,undirected=False,pos_only=False):
 	edges = set()
 	nodes = set()
 	header = None
@@ -68,6 +72,14 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 			for i in range(2,len(row)):
 				edge_popup[u][v] += '<b>%s</b>: %s<br>' % (header[i],row[i])
 			edge_popup[u][v] += '------<br>'
+
+			if (u,v) in kegg_edges:
+				edge_popup[u][v] += '<b>Also in KEGG Pathways</b>:<br>'
+				for p in kegg_edges[(u,v)]:
+					edge_popup[u][v] += p+'<br>'
+					print(p)
+				edge_popup[u][v] += '------<br>'
+
 			if len(nodes) > 300 or len(edges) > 500:
 				print('Truncating rankings!')
 				title+= '(first %d nodes and %d edges)' % (len(nodes),len(edges))
@@ -122,6 +134,9 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 		if (u,v) in ground_truth_edges or (v,u) in ground_truth_edges:
 			width=4
 			color='#000000'
+		elif (u,v) in kegg_edges:
+			width=4
+			color='#168426'
 		else: # ignored or negatives
 			width=2
 			color='#ACACAC'
@@ -245,11 +260,29 @@ def main(args):
 	ground_truth_edges = {(x[0],x[1]) for x in ground.values if x[0] != 'SRC' and x[1] != 'SNK'}
 	sources,sinks = get_labeled_nodes(os.path.join(directory,'ground-nodes.csv'))
 
+	print('get KEGG')
+	kegg_names = {}
+	with open(KEGG_LIST) as fin:
+		for line in fin:
+			if line[0] =='#':
+				continue
+			row = line.split(' --> ')
+			id = row[0].split(':')[-1]
+			keggname = row[1].replace(' - Homo sapiens (human)','')
+			kegg_names[id] = keggname
+	kegg_edges = {}
+	with open(KEGG_INTERACTIONS) as fin:
+		for line in fin:
+			if line[0] == '#':
+				continue
+			row = line.strip().split()
+			kegg_edges[(row[0],row[1])] = [kegg_names.get(n,n) for n in row[2].split('|')]
+
 	print('set prediction file...')
 	predfile = os.path.join(directory,'ranked-edges.csv')
 
-	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name,gs_group,add_times,verbose)
-	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name + ' (ground truth nodes)',gs_group,add_times,verbose,pos_only=True)
+	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name,gs_group,add_times,verbose,kegg_edges)
+	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name + ' (ground truth nodes)',gs_group,add_times,verbose,kegg_edges,pos_only=True)
 
 if __name__ == '__main__':
 	main(sys.argv)
