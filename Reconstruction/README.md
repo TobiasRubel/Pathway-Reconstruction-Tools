@@ -28,52 +28,60 @@ python3 plot_pr.py data plots $(ls data | grep composit)
 
 ## 2. Generating the node motivation figure
 
-1. Run the following code to get predictions for the five relevant methods.
+Run the following code to get predictions for the five relevant methods. This runs code, computes node PR, and plots it.
 
 ```
-python3 main.py -p Wnt -m run_PCSF run_ResponseNet run_BowtieBuilder run_ShortestPaths run_PathLinker run_RWR
+python3 main.py -p Wnt -m all --run --node_pr -k 1000 -t 0.5
 ```
 
-2. Run the node PR for these, subsampling 50X nodes and also ignoring adjacents: (TODO need to add RN, PCSF)
+Use `--force` to force the methods to be re-run if necessary.  Final files are here:
 
 ```
-python3 main.py --node_pr -p Wnt
-```
-
-3. Plot the methods. Set `COMPOSITE=False` and `NODE_MOTIVATION=True` in `plot_pr.py` and then run:
-
-```
-python3 main.py --plot -p Wnt -m all
-```
-
-Final files are here:
-
-```
-../plots/node-motivation-BowtieBuilder-PCSF-PathLinker-RWR-ResponseNet-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.pdng
-../plots/node-motivation-BowtieBuilder-PCSF-PathLinker-RWR-ResponseNet-ShortestPaths-PathLinker-2018-human-ppi-weighted-cap0-75-Wnt-10000.pdf
+../plots/node-motivation-BTB-PCSF-PL-RN-RWR-SP-2018-Wnt.pdf
+../plots/node-motivation-BTB-PCSF-PL-RN-RWR-SP-2018-Wnt.png
 ```
 
 ## 3. Benchmark figures:
 
 Pick PL as input methods for all pathways; plot composite.
 
-### 3a. DFS/BFS and weighted/unweighted and PerfectLinker Nodes/Edges (easy to do)
+### 3a. DFS/BFS and weighted/unweighted and PerfectLinker Nodes/Edges
 
 ```
-python3 main.py --benchmark -p Wnt -m run_PathLinker
-python3 main.py --benchmark -p all -m run_RWR
+python3 main.py --benchmark --upper_bounds -p Wnt -m run_PathLinker
+python3 main.py --benchmark --upper_bounds -p Wnt -m run_RWR
 ```
-### 3b. varying k in PL & PRAUG(PL) (easy to do, take a bit of time run)
 
-Lets set `k=[50,100,500,1000,5000,10000]`
+(TODO - there's an error when you run them as one call - must be something with the `--benchmark` option.) Once all the runs and pr curves are calculated, you can re-run the plot with `FULL_AXIS=False` to get a zoomed in view:
+
+```
+python3 ../Validation/PR/plot_pr.py /Volumes/compbio/2020-05-PRAUG/runs ../plots PRAUG-PL_2018_Wnt_k500 PRAUG-PL-BFS_2018_Wnt_k500 PRAUG-PL-WEIGHTED_2018_Wnt_k500 PRAUG-PL-BFS-WEIGHTED_2018_Wnt_k500 PRAUG-GT-EDGES_2018_Wnt PRAUG-GT-NODES_2018_Wnt
+python3 ../Validation/PR/plot_pr.py /Volumes/compbio/2020-05-PRAUG/runs ../plots PRAUG-RWR_2018_Wnt_k500 PRAUG-RWR-BFS_2018_Wnt_k500 PRAUG-RWR-WEIGHTED_2018_Wnt_k500 PRAUG-RWR-BFS-WEIGHTED_2018_Wnt_k500 PRAUG-GT-EDGES_2018_Wnt PRAUG-GT-NODES_2018_Wnt
+```
+
+### 3b. varying k in PL & PRAUG(PL)
+
+Lets set `k=[50,100,500,1000,5000]`
 ```
 python3 main.py -p Wnt --pl_sweep
+```
+
+To just plot, set `PARAMS=True` for gray color palette and run:
+
+```
+python3 ../Validation/PR/plot_pr.py /Volumes/compbio/2020-05-PRAUG/runs ../plots PRAUG-PL_2018_Wnt_k50 PRAUG-PL_2018_Wnt_k100 PRAUG-PL_2018_Wnt_k500 PRAUG-PL_2018_Wnt_k1000 PRAUG-PL_2018_Wnt_k5000 PL_2018_Wnt_k5000
 ```
 
 ### 3d. varying tau in RWR and PRAUG-RWR.
 
 ```
 python3 main.py -p Wnt --rwr_sweep
+```
+
+To just plot. set `PARAMS=True` for gray color palette and run:
+
+```
+python3 ../Validation/PR/plot_pr.py /Volumes/compbio/2020-05-PRAUG/runs ../plots PRAUG-RWR_2018_Wnt_a0.85-t0.1 PRAUG-RWR_2018_Wnt_a0.85-t0.2 PRAUG-RWR_2018_Wnt_a0.85-t0.3 PRAUG-RWR_2018_Wnt_a0.85-t0.4 PRAUG-RWR_2018_Wnt_a0.85-t0.5 PRAUG-RWR_2018_Wnt_a0.85-t0.75 RWR_2018_Wnt_a0.85-t0.75
 ```
 
 ### 3c. make variance plots (nearly done)
@@ -96,6 +104,17 @@ python3 main.py --post_graphs <USERNAME> <PASSWORD> -p Wnt -m run_RWR run_PCSF r
 
 When `IS_DRAFT=False` in `main.py`, the graphs are shared with the []'reconstruction-traversals' GraphSpace group](http://graphspace.org/groups/1268) (membership required).
 
+## Pathway Case Studies: Notch and Wnt
+
+```
+python3 main.py --run --runpraug -p Notch -m all --pr --plot --upper_bounds
+python3 main.py --run --runpraug -p Wnt -m all --pr --plot --upper_bounds
+```
+
+```
+python3 main.py --vote -p Notch --post_graphs aritz@reed.edu platypus
+python3 main.py --vote -p Wnt --post_graphs aritz@reed.edu platypus
+```
 ## Others?
 
 ### Prediction overlaps (venn or heatmap)

@@ -377,25 +377,36 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
         ## replace the outfile name with PL.csv (TODO this hsould happen in the method)
         shutil.move(outfile,'{}.csv'.format(method_name))
         report(method_name,interactome,pathway,args)
-'''
-def run_HybridLinker_paramsweep(interactome:str,labeled_nodes:str,pathway:str,k: int,force: bool) -> None:
-    """
-    :interactome   path/to/interactome
-    :labeled_nodes path/to/source and dest node file
-    :pathway       path/to/actual ground truth pathway
-    :k             number of paths to compute (meaningless here)
-    :returns       nothing
-    :side-effect   makes a dest directory with predicted pathway
-    """
-    #set up what we need to execute
-    RUN = 'Methods/HybridLinker/main.py'
-    for i in [50,100,500,1000,5000,10000]:
-        CALL = 'python3 {} {} {} {} {}'.format(RUN,i,interactome,labeled_nodes,pathway)
-        #execute script
-        print(CALL)
-        subprocess.call(CALL.split())
-        report('HybridLinker-{}'.format(i),'HybridLinker',interactome,labeled_nodes,pathway,k)
-'''
+
+## TODO - reqwrite to take advantage of pandas
+def vote(pathway,methods,args):
+    vote_name = 'VOTE'
+    outname = '{}.csv'.format(vote_name)
+    num = 500
+    interactome = INTERACTOME
+    edges = {} # dictionary of (u,v):num_methods
+    for m in methods:
+        with open(os.path.join(get_outdir(m,interactome,pathway,args),'ranked-edges.csv')) as fin:
+            counter = 0
+            for line in fin:
+                if line[0] == '#':
+                    continue
+                counter+=1
+                row = line.strip().split()
+                e = (row[0],row[1])
+                if e not in edges:
+                    edges[e] = 1
+                else:
+                    edges[e] += 1
+                if counter>=num:
+                    break
+    out = open(outname,'w')
+    out.write('##tail\thead\trank\n')
+    for e,val in sorted(edges.items(), key=lambda x:x[1],reverse=True):
+        out.write('%s\t%s\t%d\n' %(e[0],e[1],val))
+    out.close()
+    report(vote_name,interactome,pathway,args)
+    return
 
 def fetch_arguments(pathways,args):
     global DATA_PATH, INTERACTOME
@@ -471,11 +482,11 @@ def main(argv):
 
     #####
     ## Get all methods for computing precisioin and recall and/or plotting.
-    if args.pr or args.plot or args.gs:
+    if args.pr or args.plot or args.gs or args.vote:
         ORIG_AND_AUG_METHODS = []
         if args.run or args.gs:
             ORIG_AND_AUG_METHODS += [METHOD_ABBREVIATIONS[m] for m in METHODS]
-        if args.runpraug or args.gs:
+        if args.runpraug or args.gs or args.vote:
             ORIG_AND_AUG_METHODS += ['PRAUG-{}'.format(METHOD_ABBREVIATIONS[m]) for m in METHODS]
         if args.upper_bounds:
             ORIG_AND_AUG_METHODS += ['PRAUG-GT-NODES','PRAUG-GT-EDGES']
@@ -484,7 +495,7 @@ def main(argv):
     ## Compute Precision/Recall
     if args.pr:
         RUN = '../Validation/PR/make_pr.py'
-        print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+        print('Computing Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(ORIG_AND_AUG_METHODS)))
         for p in PATHWAYS:
             print('precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
@@ -497,8 +508,10 @@ def main(argv):
     #####
     ## Plot PR Curves
     if args.plot:
+        if ORIG_AND_AUG_METHODS == []: # possibility that we're only plotting here...if empty reset to METHODS
+            ORIG_AND_AUG_METHODS = [METHOD_ABBREVIATIONS[m] for m in METHODS]
         RUN = '../Validation/PR/plot_pr.py'
-        print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+        print('Plotting Precision and Recall for %d pathways and %d methods' % (len(PATHWAYS),len(ORIG_AND_AUG_METHODS)))
         for p in PATHWAYS:
             print('plotting precision/recall: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in ORIG_AND_AUG_METHODS])
@@ -509,13 +522,13 @@ def main(argv):
 
     #####
     ## Post GraphSpace Graphs
-    if args.gs:
+    if args.gs and not args.vote:
         username,password = args.post_graphs
         IS_DRAFT=True
         for p in PATHWAYS:
-            print(p)
+            print('posting GS graph for pathway',p)
             for m in ORIG_AND_AUG_METHODS:
-                print('  ',m)
+                print('  posting GS graph for method',m)
                 algorithm = m.split('_')[-1]
                 name = '%s-%s' % (p,algorithm)
                 directory = get_outdir(algorithm,INTERACTOME,p,args)
@@ -525,6 +538,27 @@ def main(argv):
                 print(CALL)
                 subprocess.call(CALL.split())
 
+
+    ####
+    ## have methods vote
+    if args.vote:
+        for p in PATHWAYS:
+            print('Voting for pathway:',p)
+            vote(p,ORIG_AND_AUG_METHODS,args)
+        if args.gs:
+            username,password = args.post_graphs
+            IS_DRAFT=False
+            for p in PATHWAYS:
+                print('Posting GS Graph for pathway:',p)
+                name = '%s-VOTE' % (p)
+                directory = get_outdir('VOTE',INTERACTOME,p,args)
+                #print(username,password,name,directory,draft)
+                RUN = '../Misc/visualize_networks/post_graphspace_graph_voting.py'
+                CALL = 'python3 {} {} {} {} {} {} 6'.format(RUN,username,password,name,directory,IS_DRAFT)
+                print(CALL)
+                subprocess.call(CALL.split())
+
+
     ### SPECIAL ACTIONS
     #####
     ## Compute Node Precision/Recall (Motivation figure)
@@ -533,9 +567,11 @@ def main(argv):
             print('WARNING: Running node motivation pr code for all methods, not -m methods.')
         all_methods = [METHOD_ABBREVIATIONS[m] for m in ALL_METHODS]
         RUN = '../Validation/PR/make_node_motivation_pr.py'
+        PLOT_RUN = '../Validation/PR/plot_pr.py'
         for p in PATHWAYS:
             print('node motivation: {}'.format(p))
             runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in all_methods])
+
             CALL = 'python3 {} {} {} {}'.format(RUN,DEST_PATH,False,runs)
             print(CALL)
             if not args.printonly:
@@ -546,6 +582,11 @@ def main(argv):
             if not args.printonly:
                 subprocess.call(CALL.split())
                 print()
+
+            CALL = 'python3 {} {} {} {}'.format(PLOT_RUN,DEST_PATH,PLOT_PATH,runs)
+            print(CALL)
+            if not args.printonly:
+                subprocess.call(CALL.split())
 
     #####
     ## Compute RWR parameter sweep fig
@@ -650,7 +691,8 @@ def main(argv):
             benchmark_methods += ['PRAUG-{}-BFS'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-WEIGHTED'.format(a) for a in abbrvs]
             benchmark_methods += ['PRAUG-{}-BFS-WEIGHTED'.format(a) for a in abbrvs]
-            print('benchmark compute pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            benchmark_methods += ['PRAUG-GT-EDGES','PRAUG-GT-NODES']
+            print('benchmark compute pr: %d pathways and %d methods' % (len(PATHWAYS),len(benchmark_methods)))
             for p in PATHWAYS:
                 print('making precision/recall: {}'.format(p))
                 runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
@@ -662,7 +704,7 @@ def main(argv):
 
             ## plot precision/recall
             RUN = '../Validation/PR/plot_pr.py'
-            print('benchmark plot pr: %d pathways and %d methods' % (len(PATHWAYS),len(METHODS)))
+            print('benchmark plot pr: %d pathways and %d methods' % (len(PATHWAYS),len(benchmark_methods)))
             for p in PATHWAYS:
                 print('plotting precision/recall: {}'.format(p))
                 runs = " ".join([get_outdir(m,INTERACTOME,p,args).split('/')[-1] for m in benchmark_methods])
@@ -690,6 +732,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     group.add_argument("--pr",action="store_true",help="Compute Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--plot",action="store_true",help="Plot Precision/Recall plots for predictions based on -p and -m arguments.")
     group.add_argument("--post_graphs",nargs=2,metavar='STR',default=[None,None],help="Post GraphSpace graphs for predictions based on -p and -m arguments. Takes TWO inputs: GraphSpace username and password.")
+    group.add_argument("--vote",action="store_true",help="Have PRAUG methods vote on top edges for pathways based on -p arguments. If --post_graphs is specified, will post to GS.")
 
     group = parser.add_argument_group('Specialized Actions')
     group.add_argument("--node_pr",action="store_true",help='Plot node motivation precision/recall (which is a little different than the typical PR).')
@@ -710,7 +753,7 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
     args = parser.parse_args()
 
     ## check that at least one action is specified
-    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr or args.rwr_sweep or args.pl_sweep or args.benchmark):
+    if not (args.run or args.runpraug or args.pr or args.plot or args.post_graphs[0] or args.node_pr or args.rwr_sweep or args.pl_sweep or args.benchmark or args.vote):
         parser.print_help()
         sys.exit('\nERROR: At least one action must be specified. Exiting.')
 
@@ -733,14 +776,14 @@ def parse_args(ALL_PATHWAYS,ALL_METHODS):
 
     ## check that at least one method is specified
     ## (note this is OK if node_pr is True)
-    if args.methods == None and not (args.node_pr or args.rwr_sweep or args.pl_sweep):
+    if args.methods == None and not (args.node_pr or args.rwr_sweep or args.pl_sweep or args.vote):
         parser.print_help()
         sys.exit('\nERROR: At least one method (-m) must be specified. Exiting.')
-    elif args.methods == ['all']:
+    elif args.methods == ['all'] or args.vote:
         METHODS = ALL_METHODS
     elif args.methods == None:
         if not (args.node_pr or args.rwr_sweep or args.pl_sweep):
-            sys.exit('\nERROR: Method must be specified for any action other than --node_pr and --rwr_sweep or --pl_sweep. Exiting.')
+            sys.exit('\nERROR: Method must be specified for any action other than --node_pr. -rwr_sweep, or --pl_sweep. Exiting.')
         METHODS = None
     else:
         METHODS = args.methods

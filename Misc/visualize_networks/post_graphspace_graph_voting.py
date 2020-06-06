@@ -38,10 +38,14 @@ def post(G,gs,gs_group):
 			gs.share_graph(graph=graph,group_name=gs_group)
 	return graph
 
-def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,title,gs_group,add_times,verbose,kegg_edges,np_edges,undirected=False,pos_only=False):
+def post_to_graphspace(thres,graphspace,G,edgefile,ground_truth_edges,sources,targets,title,gs_group,add_times,verbose,kegg_edges,np_edges,undirected=False,pos_only=False):
 	edges = set()
 	nodes = set()
 	header = None
+	if thres == 6:
+		title += ' (all 6 methods)'
+	else:
+		title += ' (%d or more methods)' % (thres)
 
 	ground_truth_nodes = {u for u,v in ground_truth_edges}.union({v for u,v in ground_truth_edges})
 
@@ -52,6 +56,10 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 				header = line.strip().split()
 				continue
 			row = line.strip().split()
+
+			if int(row[2]) < thres:
+				break
+
 			u = row[0]
 			v = row[1]
 			if u == 'SRC' or v == 'SNK':
@@ -142,10 +150,10 @@ def post_to_graphspace(graphspace,G,edgefile,ground_truth_edges,sources,targets,
 			width=4
 			color='#000000'
 		elif (u,v) in np_edges:
-			width=2
+			width=4
 			color='#A8A8A8'
 		elif (u,v) in kegg_edges:
-			width=2
+			width=4
 			color='#E1AAAA'
 		else: # ignored or negatives
 			width=4
@@ -248,7 +256,11 @@ def load_df_tab(name:str):
 def main(args):
 	print('ARGUMENTS:',args[1:])
 	username,password,name,directory,draft = args[1],args[2],args[3],args[4],eval(args[5])
+	thres = []
+	for i in range(6,len(args)):
+		thres.append(int(args[i]))
 	print('Draft?',draft)
+	print('Thres:',thres)
 	if draft:
 		gs_group = None
 		add_times = True
@@ -300,8 +312,8 @@ def main(args):
 	print('set prediction file...')
 	predfile = os.path.join(directory,'ranked-edges.csv')
 
-	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name,gs_group,add_times,verbose,kegg_edges,np_edges)
-	post_to_graphspace(graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name + ' (ground truth nodes)',gs_group,add_times,verbose,kegg_edges,np_edges,pos_only=True)
+	for t in thres:
+		post_to_graphspace(t,graphspace,interactome,predfile,ground_truth_edges,sources,sinks,name,gs_group,add_times,verbose,kegg_edges,np_edges)
 
 if __name__ == '__main__':
 	main(sys.argv)
