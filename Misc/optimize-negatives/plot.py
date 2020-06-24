@@ -16,6 +16,8 @@ def plot(pname: str) -> None:
     dat.columns = mthds
     dat.plot.box()
     plt.xticks(rotation=45)
+    plt.ylabel('Fmax')
+    plt.title('Fmaxs for {} across 50 negative sets'.format(pname))
     plt.tight_layout()
     plt.savefig('{}-boxplot.pdf'.format(pname))
     

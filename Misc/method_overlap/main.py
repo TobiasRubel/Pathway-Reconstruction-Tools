@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 #global variables
 
-DDIR = '../../Validation/PR/data'
+DDIR = '../../Validation/PR/refactor-test-data'
 
 #fetch data directories
-COMPDIRS = [os.path.join(DDIR,x) for x in os.listdir(DDIR) if 'composit' in x and not ('Hybrid' in x or 'Perfect' in x or 'RWR' in x)]
+COMPDIRS = [os.path.join(DDIR,x) for x in os.listdir(DDIR) if 'composite' in x and not ('Hybrid' in x or 'Perfect' in x or 'PRAUG' in x or 't0.5' in x)]
 print(COMPDIRS)
 pdict = {x.split('/')[-1].split('_')[0]:x for x in COMPDIRS}
 print(pdict)
@@ -36,7 +36,10 @@ simdict = {p:[sim(npdict[p],npdict[m]) for m in npdict] for p in npdict}
 df = pd.DataFrame(simdict)
 df.index = list(simdict.keys())
 print(df)
-sns.heatmap(df, annot=True)
+sns.heatmap(df, annot=True,cmap=sns.cm.rocket_r)
+locs,labels = plt.xticks()
+sdict = {'PL':15403,'RWR':6074,'RN':791,'PCSF':677,'SP':2281,'BTB':788}
+plt.xticks(locs,labels=['{}\n{}'.format(l,sdict[l]) for l in df.index])
 plt.tight_layout()
 plt.savefig('composite_method_overlap.pdf')
 plt.show()
