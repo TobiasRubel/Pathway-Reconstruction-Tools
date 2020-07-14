@@ -34,9 +34,9 @@ DEST_PATH = '../Validation/PR/refactor-test-data'
 #DEST_PATH = '/Volumes/compbio/2020-05-PRAUG/runs'
 
 #for each pathway, plots are to be deposited here.
-#PLOT_PATH = '../Validation/PR/plots'
+PLOT_PATH = '../Validation/PR/plots'
 #PLOT_PATH = '../plots'
-PLOT_PATH = '../plots'
+#PLOT_PATH = 'plots'
 #all input data is placed here...
 DATA_PATH = '../Pathways'
 
@@ -53,6 +53,9 @@ METHOD_ABBREVIATIONS = {'run_PathLinker':'PL',
     'run_PCSF':'PCSF',
     'run_RWR':'RWR',
     'run_ShortestPaths':'SP',
+    'run_RWRS':'RWRS',
+    'run_RWRT':'RWRT',
+    'run_GO':'GO',
     }
 
 EXAMPLE_CONFIG = '../Validation/PR/config.conf'
@@ -178,6 +181,77 @@ def run_RWR(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Names
     if not args.printonly:
         subprocess.call(CALL.split())
         report(method_name,interactome,pathway,args)
+
+def run_RWRS(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    method_name = METHOD_ABBREVIATIONS['run_RWRS']
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
+        print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/RWRS/rwrs.py'
+    verbose='True'
+    CALL = 'python3 {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,args.a,args.t,verbose)
+    print(CALL)
+    if not args.printonly:
+        subprocess.call(CALL.split())
+        report(method_name,interactome,pathway,args)
+
+def run_RWRT(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    method_name = METHOD_ABBREVIATIONS['run_RWRT']
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
+        print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/RWRT/rwrt.py'
+    verbose='True'
+    CALL = 'python3 {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,args.a,args.t,verbose)
+    print(CALL)
+    if not args.printonly:
+        subprocess.call(CALL.split())
+        report(method_name,interactome,pathway,args)
+
+def run_GO(interactome:str, pathway:str, labeled_nodes:str, args:argparse.Namespace, subcall=False) -> None:
+    """
+    :interactome   path/to/interactome
+    :labeled_nodes path/to/source and dest node file
+    :pathway       path/to/actual ground truth pathway
+    :k             number of paths to compute
+    :returns       nothing
+    :side-effect   makes a dest directory with predicted pathway
+    """
+    method_name = METHOD_ABBREVIATIONS['run_GO']
+    if ( (not args.force) or (subcall and not args.force_subcall) ) and outfile_exists(method_name, interactome,pathway,args):
+        print('{} Outfile Exists. Not overwriting: use --force to overwrite.'.format(method_name))
+        return
+
+    #set up what we need to execute
+    RUN = 'Methods/GO/go.py'
+    verbose='True'
+    CALL = 'python3 {} {} {} {} {} {} {} {}'.format(RUN,interactome,labeled_nodes,args.w,args.b,args.g,args.r,verbose)
+    print(CALL)
+    if not args.printonly:
+        subprocess.call(CALL.split())
+        report(method_name,interactome,pathway,args)
+
+
 
 ## TODO: this makes intermediate files.
 ## TODO: THIS IS AN UNDIRECTED GRAPH and thus the edges may be undirected.
@@ -340,6 +414,8 @@ def PRAUG(algorithm:str, interactome:str, pathway:str, labeled_nodes:str, args:a
         run_ShortestPaths(interactome,pathway,labeled_nodes,args,subcall=True)
     elif algorithm == 'GT-NODES' or algorithm == 'GT-EDGES':
         predictions = labeled_nodes.replace('-nodes.txt','-edges.txt')
+    elif algorithm == 'GO':
+        run_GO(interactome,pathway,labeled_nodes,args,subcall=True)
     else:
         sys.exit('ERROR: algorithm "%s" is not implemented.' % (algorithm))
 
@@ -411,7 +487,7 @@ def main(argv):
     #initialize some values
     #with open('main.py','r') as f:
     #    ALL_METHODS = re.findall('run_.*(?=\()',f.read())[:-1]
-    ALL_METHODS = ['run_PathLinker','run_ShortestPaths','run_RWR','run_ResponseNet','run_BowtieBuilder','run_PCSF']
+    ALL_METHODS = ['run_GO','run_PathLinker','run_ShortestPaths','run_RWR','run_ResponseNet','run_BowtieBuilder','run_PCSF']#,'run_RWRS','run_RWRT',
 
     ## PATHWAYS directory includes allNPnodes.txt and NP_pathways.zip; make sure that '-' is in the variable.
     ALL_PATHWAYS = {x.split('-')[0] for x in os.listdir(DATA_PATH) if '-' in x and not 'all' in x}
